@@ -1,5 +1,5 @@
 ## Interface: 120007, 120100
-## Version: R6.2608.1804
+## Version: R6.2608.2507
 ## Title: OneWoW - Data: |cFFFFFFFFQuests|r
 ## Notes: OneWoW Data Addon that: provides quest data for the Catalog.
 ## Author: OneWoW Dev Team
@@ -44,6 +44,8 @@ Data\Generated\QuestLines.lua
 Data\Generated\Campaigns.lua
 Data\Generated\QuestObjectives.lua
 Data\Generated\QuestPins.lua
+Data\RemixRewardItems.lua
+Data\RemixOnlyQuests.lua
 Data\Generated\Apply.lua
 
 # Modules
