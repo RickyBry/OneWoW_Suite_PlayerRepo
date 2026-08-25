@@ -42,6 +42,7 @@ jobs:
             OneWoW_Catalog
             OneWoW_CatalogData_Journal
             OneWoW_CatalogData_Quests
+            OneWoW_CatalogData_Quests_Archive
             OneWoW_CatalogData_Tradeskills
             OneWoW_CatalogData_Vendors
             OneWoW_DirectDeposit
@@ -69,6 +70,7 @@ jobs:
             OneWoW_Catalog
             OneWoW_CatalogData_Journal
             OneWoW_CatalogData_Quests
+            OneWoW_CatalogData_Quests_Archive
             OneWoW_CatalogData_Tradeskills
             OneWoW_CatalogData_Vendors
             OneWoW_DirectDeposit
@@ -105,6 +107,7 @@ jobs:
             OneWoW_Catalog \
             OneWoW_CatalogData_Journal \
             OneWoW_CatalogData_Quests \
+            OneWoW_CatalogData_Quests_Archive \
             OneWoW_CatalogData_Tradeskills \
             OneWoW_CatalogData_Vendors \
             OneWoW_DirectDeposit \

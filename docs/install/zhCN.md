@@ -261,7 +261,7 @@ ln -s "/Users/你的用户名/Documents/OneWoW_Suite_PlayerRepo/OneWoW" "/Applic
 |------|--------|
 | **必须** | `OneWoW` |
 | **功能** | `OneWoW_Bags`、`OneWoW_QoL`、`OneWoW_AltTracker`、`OneWoW_Catalog`、`OneWoW_Trackers`、`OneWoW_Notes`、`OneWoW_ShoppingList`、`OneWoW_Mail`、`OneWoW_DirectDeposit` |
-| **Catalog 数据** | `OneWoW_CatalogData_Journal`、`OneWoW_CatalogData_Vendors`、`OneWoW_CatalogData_Tradeskills`、`OneWoW_CatalogData_Quests` |
+| **Catalog 数据** | `OneWoW_CatalogData_Journal`、`OneWoW_CatalogData_Vendors`、`OneWoW_CatalogData_Tradeskills`、`OneWoW_CatalogData_Quests`、`OneWoW_CatalogData_Quests_Archive` |
 | **AltTracker 数据** | `OneWoW_AltTracker_Storage`、`OneWoW_AltTracker_Character`、`OneWoW_AltTracker_Professions`、`OneWoW_AltTracker_Collections`、`OneWoW_AltTracker_Endgame`、`OneWoW_AltTracker_Auctions`、`OneWoW_AltTracker_Accounting` |
 | **可选** | `OneWoW_Utility_DevTool`（`/1wdt`） |
 
