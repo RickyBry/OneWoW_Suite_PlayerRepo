@@ -8,10 +8,9 @@
 
 This is a companion data addon for the OneWoW Catalog. It provides:
 
-- **Recipe Database** - Complete list of recipes for all professions
+- **Recipe Database** - Recipes for Classic through Midnight (patch 12.1)
 - **Material Requirements** - What materials are needed for each recipe
-- **Profession Information** - Skill requirements and progression
-- **Crafting Costs** - Gold and material costs for crafting
+- **Profession Information** - Skill ranks and where to learn a recipe when we know it
 
 ---
 
@@ -71,8 +70,8 @@ Part of the [OneWoW Suite](../README.md). See the suite README for the full addo
 
 ---
 
-**Author:** MichinMuggin / Ricky
+**Author:** OneWoW Development Team
 
 **Website:** https://onewow.net/
 
-**All rights reserved.**
+**License:** See [LICENSE.md](../LICENSE.md). Copyright the OneWoW Development Team. All rights reserved.

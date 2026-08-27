@@ -46,14 +46,14 @@ With **OneWoW_CatalogData_Tradeskills** also installed, the **Craft** button kno
 
 ### Crafting Orders Integration
 
-When the Profession Orders page is open, dedicated buttons let you push the order's reagents into a list, mirroring the crafting page workflow.
+When the Profession Orders page is open, dedicated buttons on the order details let you push the order's reagents into a list, mirroring the crafting page workflow. The QoL Crafting Orders overlay can also add missing crafter reagents from the browse list (active list, Make List, or pick a list).
 
 ### Bag Integration
 
-- A small cart icon appears on bag slots holding items that are on any list.
+- A cart icon appears on bag (and other item) slots holding items that are on any list. Configure it under QoL Overlays (icon, position, vendor, Auction House). Optional: only when you still need more.
 - Toggleable Auction House quick-search button anchored to the bag UI.
 - Toggleable in-bag "open Shopping List" button.
-- All overlays / extra buttons can be turned off individually in settings.
+- Extra bag / profession / Auction House buttons can be turned off in Shopping List settings.
 
 ### Tooltip Integration
 
@@ -128,8 +128,8 @@ Part of the [OneWoW Suite](../README.md). See the suite README for the full addo
 
 ---
 
-**Author:** MichinMuggin / Ricky
+**Author:** OneWoW Development Team
 
 **Website:** https://onewow.net/
 
-**All rights reserved.**
+**License:** See [LICENSE.md](../LICENSE.md). Copyright the OneWoW Development Team. All rights reserved.

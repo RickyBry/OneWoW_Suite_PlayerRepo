@@ -16,7 +16,9 @@ Load-unit wiring: [`ARCHITECTURE.md`](ARCHITECTURE.md).
    warehouse clone. `Apply.lua` fills holes only (never replaces a pin that
    already has coordinates). Runs again after Archive import.
 3. **Live scanner** — `QuestScanner` heals text, giver, and turn-in from the
-   quest log / quest frame as the player plays. It does not invent quest IDs
+   quest log / quest frame as the player plays. Each capture patches that one
+   quest and its reward/NPC indexes in place (it does not rebuild the merged
+   set on loot or quest-reward tooltips). It does not invent quest IDs
    for the shipped DB, and it does not persist live objective progress
    (`finished` / `numFulfilled`). Overlay `C_QuestLog.GetQuestObjectives` only
    while the player is on the quest.
@@ -113,9 +115,7 @@ tracking names. Unnamed QuestV2 IDs are not shipped.
 
 Pull **one expansion at a time**, newest unfinished first, down to Classic.
 Do not start the next expansion until the current one has `merge` + `generate`.
-**In progress: Battle for Azeroth** (first full leftover `run`). Then: Legion
-→ Warlords of Draenor → Mists of Pandaria → Cataclysm → Wrath of the Lich King
-→ Burning Crusade → Classic.
+**Done through Classic.** Leftover `need` is Wowhead-blank (not unfetched).
 
 Done:
 
@@ -123,32 +123,18 @@ Done:
 - The War Within leftover; leftover `need` is Wowhead-blank
 - Dragonflight first full `run` (discover + fetch + merge)
 - Shadowlands first full `run`; leftover `need` is Wowhead-blank
+- Battle for Azeroth leftover; leftover `need` is Wowhead-blank
+- Legion leftover; leftover `need` is Wowhead-blank
+- Warlords of Draenor leftover; leftover `need` is Wowhead-blank
+- Mists of Pandaria leftover; leftover `need` is Wowhead-blank
+- Cataclysm leftover; leftover `need` is Wowhead-blank
+- Wrath of the Lich King leftover; leftover `need` is Wowhead-blank
+- Burning Crusade leftover; leftover `need` is Wowhead-blank
+- Classic leftover; leftover `need` is Wowhead-blank
 
 From OneWoW_Workspace. Local `quest-refresh.py` only (Grok Bot: ask first).
 
 ```bash
-# Remaining after Battle for Azeroth
-python bin/wowhead/quest-refresh.py run --expansions legion
-python bin/quest_db2_tools.py generate
-
-python bin/wowhead/quest-refresh.py run --expansions wod
-python bin/quest_db2_tools.py generate
-
-python bin/wowhead/quest-refresh.py run --expansions mop
-python bin/quest_db2_tools.py generate
-
-python bin/wowhead/quest-refresh.py run --expansions cata
-python bin/quest_db2_tools.py generate
-
-python bin/wowhead/quest-refresh.py run --expansions wotlk
-python bin/quest_db2_tools.py generate
-
-python bin/wowhead/quest-refresh.py run --expansions bc
-python bin/quest_db2_tools.py generate
-
-python bin/wowhead/quest-refresh.py run --expansions classic
-python bin/quest_db2_tools.py generate
-
 python bin/catalog_data_status.py quests
 python bin/wowhead/quest-refresh.py status --expansions all
 ```

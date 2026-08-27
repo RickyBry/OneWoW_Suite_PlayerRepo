@@ -19,7 +19,7 @@ Players use quest data through the Catalog — this addon has no standalone UI.
 
 ## Supported Expansions
 
-This pack ships **The War Within** and **Midnight**. Classic through Dragonflight ship in **Quest Archive**. Midnight, The War Within, Dragonflight, and Shadowlands lists have the pins and text we have; Battle for Azeroth through Classic will get that same fill soon.
+This pack ships **The War Within** and **Midnight**. Classic through Dragonflight ship in **Quest Archive**. Classic through Midnight (patch 12.1) lists have the pins and text we have.
 
 ---
 
@@ -77,8 +77,8 @@ Part of the [OneWoW Suite](../README.md). See the suite README for the full addo
 
 ---
 
-**Author:** MichinMuggin / Ricky
+**Author:** OneWoW Development Team
 
 **Website:** https://onewow.net/
 
-**All rights reserved.**
+**License:** See [LICENSE.md](../LICENSE.md). Copyright the OneWoW Development Team. All rights reserved.

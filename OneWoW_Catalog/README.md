@@ -38,8 +38,8 @@ Complete profession and recipe database:
 - Browse recipes for all professions (Alchemy, Blacksmithing, Cooking, Enchanting, Engineering, Fishing, Herbalism, Housing Dyes, Inscription, Jewelcrafting, Leatherworking, Mining, Skinning, Tailoring)
 - Search for specific recipes or crafts
 - See what materials each recipe requires
+- See skill ranks and where to learn a recipe when we know it, including the trainer or vendor name
 - Find recipes that use specific materials
-- Look up profession skill requirements
 - Perfect for planning crafting projects
 
 ### Item Search Tab
@@ -65,7 +65,7 @@ The Catalog works with companion data addons to provide complete information:
 - Complete expansion coverage (Classic through Midnight)
 
 ### Data: Tradeskills (OneWoW_CatalogData_Tradeskills)
-- Complete recipe database
+- Complete recipe database for Classic through Midnight (patch 12.1)
 - Material requirements
 - Crafting costs and yields
 - Profession progression guides
@@ -81,7 +81,7 @@ The Catalog works with companion data addons to provide complete information:
 - Static quest database with live scanner enrichment
 - Per-character completion tracking
 - This expansion and the previous one (The War Within and Midnight)
-- Midnight through Shadowlands lists have the pins and text we have; Battle for Azeroth through Classic will get that same fill soon
+- Classic through Midnight (patch 12.1) lists have the pins and text we have
 
 ### Data: Quest Archive (OneWoW_CatalogData_Quests_Archive)
 - Classic through Dragonflight
@@ -176,8 +176,8 @@ Part of the [OneWoW Suite](../README.md). See the suite README for the full addo
 
 ---
 
-**Author:** MichinMuggin / Ricky
+**Author:** OneWoW Development Team
 
 **Website:** https://onewow.net/
 
-**All rights reserved.**
+**License:** See [LICENSE.md](../LICENSE.md). Copyright the OneWoW Development Team. All rights reserved.
