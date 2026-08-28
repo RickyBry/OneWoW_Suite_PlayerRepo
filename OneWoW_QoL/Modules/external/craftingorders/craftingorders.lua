@@ -137,6 +137,10 @@ function M:OnEnable()
         if not ModuleOn() then return end
         M:RefreshOverlay()
     end)
+    OneWoW.Inventory.RegisterBankSlotsCallback(OWNER, function()
+        if not ModuleOn() then return end
+        M:RefreshOverlay()
+    end)
 
     local f = M:EnsureEventFrame()
     f:RegisterEvent("QUEST_LOG_UPDATE")
@@ -178,10 +182,17 @@ function M:OnDisable()
     M:HideOverlay()
     if M._modeBtn then
         M._modeBtn:Hide()
+        M._settingsBtn:Hide()
     end
 end
 
 function M:OnToggle(toggleId)
+    if toggleId == "hideUnlearned" then
+        if M:WantsOverlay() then
+            M:RefreshOverlay()
+        end
+        return
+    end
     if toggleId ~= "useBlizzardList" then return end
     M:UpdateModeButton()
     if M:WantsOverlay() then

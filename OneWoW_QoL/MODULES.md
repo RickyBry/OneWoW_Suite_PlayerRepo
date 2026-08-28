@@ -3,6 +3,7 @@
 Catalog of toggleable features under `Modules/external/`. Each module is independent — enable only what you want in the QoL Features UI (`/1wqol`).
 
 Module authors: [DEVELOPERS.md](DEVELOPERS.md). Suite docs: [OneWoW/Docs/README.md](../OneWoW/Docs/README.md).
+Community credit: [MODULE_CREDITS.md](../MODULE_CREDITS.md) (in-game: each module's Details dialog).
 
 **36 modules** across 5 categories (matches `module.lua` `category` values in the Features UI).
 
@@ -149,7 +150,7 @@ World map: reveal unexplored terrain from client data, optional tints, battlefie
 
 ### Minimap Button Collector
 
-Collects minimap addon buttons into a single themed container. Uses the OneWoW brand icon and supports grid layout, auto-close, and an enhanced OneWoW quick-launch row.
+Collects minimap addon buttons into a single themed container. Uses the OneWoW brand icon and supports grid layout, auto-close, and an enhanced OneWoW quick-launch row with optional Mail, Settings, and Portals tiles.
 
 - **Module id:** `minimapbuttons` · **Folder:** `Modules/external/minimapbuttons/`
 
@@ -173,7 +174,7 @@ Shows a companion panel alongside the profession window with expansion skill bre
 
 ### Crafting Orders
 
-Replaces the right-hand crafting orders table with Craftable now and Missing mats for Public, Guild, Personal, and Patron orders. Rows show You provide / Customer mats and reward icons. A WoW UI / One UI button on the order tabs switches back to Blizzard's table. Add missing reagents to a Shopping List. Start, craft, and complete from one button.
+Replaces the right-hand crafting orders table with Craftable now, Missing mats, and Recipe Unlearned for Public, Guild, Personal, and Patron orders. Rows show You provide / Customer mats and reward icons. A WoW UI / One UI button on the order tabs switches back to Blizzard's table. Hide unlearned recipes from Features. Add missing reagents to a Shopping List. Start, craft, and complete from one button.
 
 - **Module id:** `craftingorders` · **Folder:** `Modules/external/craftingorders/` — [details](Docs/Modules/craftingorders.md)
 
@@ -182,6 +183,7 @@ Replaces the right-hand crafting orders table with Craftable now and Missing mat
 Displays a movable bar with clickable buttons for special quest items from your quest log. Shows cooldowns, charges, and supports sorting by quest or item name.
 
 - **Module id:** `questitembar` · **Folder:** `Modules/external/questitembar/` — [details](Modules/external/questitembar/README.md)
+- **Author:** Clew
 
 ## Social
 

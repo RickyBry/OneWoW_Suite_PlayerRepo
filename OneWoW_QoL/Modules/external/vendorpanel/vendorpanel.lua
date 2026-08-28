@@ -71,6 +71,7 @@ local state = {
     vendorSellSeq = 0,
     _buttonRetry = nil,
     filteredVendorItems = {},
+    knownCache = {},
     clearedSlots = {},
     slotMap = {},
     _plumberPostRemap = false,
@@ -137,22 +138,8 @@ end
 
 local function IsEnsemble(itemLink)
     if not itemLink then return false end
-    if not _G["OneWoW_QoL_VendorEnsembleScanner"] then
-        CreateFrame("GameTooltip", "OneWoW_QoL_VendorEnsembleScanner", nil, "GameTooltipTemplate")
-    end
-    local scanner = _G["OneWoW_QoL_VendorEnsembleScanner"]
-    scanner:SetOwner(WorldFrame, "ANCHOR_NONE")
-    scanner:ClearLines()
-    scanner:SetHyperlink(itemLink)
-    for i = 1, scanner:NumLines() do
-        local line = _G["OneWoW_QoL_VendorEnsembleScannerTextLeft" .. i]
-        if line and line:GetText() then
-            local text = line:GetText()
-            if text:find("Ensemble", 1, true) then return true end
-            if text:find("Collect the appearances", 1, true) then return true end
-        end
-    end
-    return false
+    local itemID = C_Item.GetItemInfoInstant(itemLink)
+    return itemID and C_Item.GetItemLearnTransmogSet(itemID) ~= nil
 end
 
 local function IsAnyCosmetic(itemLink)
@@ -184,13 +171,6 @@ local function IsReagent(itemLink)
     return itemType == "Reagent" or classID == Enum.ItemClass.Tradegoods
 end
 
-local function GetArmorTypeFromLink(itemLink)
-    if not itemLink then return nil end
-    local itemType, itemSubType = select(6, C_Item.GetItemInfo(itemLink))
-    if itemType == "Armor" then return itemSubType end
-    return nil
-end
-
 local CLASS_ARMOR = {
     WARRIOR = "Plate",
     PALADIN = "Plate",
@@ -218,52 +198,53 @@ local function GetPreferredArmor()
     return CLASS_ARMOR[state.playerClass]
 end
 
+local RECIPE_SUBCLASS_TO_PROF = {
+    [Enum.ItemRecipeSubclass.Alchemy] = "Alchemy",
+    [Enum.ItemRecipeSubclass.Blacksmithing] = "Blacksmithing",
+    [Enum.ItemRecipeSubclass.Cooking] = "Cooking",
+    [Enum.ItemRecipeSubclass.Enchanting] = "Enchanting",
+    [Enum.ItemRecipeSubclass.Engineering] = "Engineering",
+    [Enum.ItemRecipeSubclass.Inscription] = "Inscription",
+    [Enum.ItemRecipeSubclass.Jewelcrafting] = "Jewelcrafting",
+    [Enum.ItemRecipeSubclass.Leatherworking] = "Leatherworking",
+    [Enum.ItemRecipeSubclass.Tailoring] = "Tailoring",
+}
+
 -- Known = collected (mounts/pets/toys/recipes/decor/transmog) or ITEM_SPELL_KNOWN.
--- Prefer Collectibles over a live GameTooltip scan: SetHyperlink often returns
--- before "Already Known" is filled on first merchant open.
+-- Collectibles is enough for classified items. Tooltip scan only for recipe
+-- class misses, and only once per itemID while this merchant is open.
 local function IsAlreadyKnown(itemLink)
     if not itemLink then return false end
 
     local itemID = tonumber(itemLink:match("item:(%d+)"))
     if not itemID then return false end
 
-    local status = OneWoW.Collectibles.GetItemCollectionStatus(itemID, itemLink, { hyperlink = itemLink })
-    if status and status.collected then
-        return true
-    end
+    local cached = state.knownCache[itemID]
+    if cached ~= nil then return cached end
 
-    local Scanner = OneWoW.TooltipScanner
-    local td = Scanner:GetHyperlinkData(itemLink)
-    if Scanner:IsAlreadyKnown(td) then
-        return true
-    end
-    return Scanner:IsAlreadyKnownText(Scanner:GetHyperlinkText(itemLink))
-end
-
-local function GetProfessionFromTooltip(itemLink)
-    if not itemLink then return nil end
-    if not _G["OneWoW_QoL_VendorProfScanner"] then
-        CreateFrame("GameTooltip", "OneWoW_QoL_VendorProfScanner", nil, "GameTooltipTemplate")
-    end
-    local scanner = _G["OneWoW_QoL_VendorProfScanner"]
-    scanner:SetOwner(WorldFrame, "ANCHOR_NONE")
-    scanner:SetHyperlink(itemLink)
-    for i = 1, scanner:NumLines() do
-        local line = _G["OneWoW_QoL_VendorProfScannerTextLeft" .. i]
-        if line and line:GetText() then
-            local text = line:GetText()
-            if text:find("Alchemy", 1, true) then return "Alchemy" end
-            if text:find("Blacksmithing", 1, true) then return "Blacksmithing" end
-            if text:find("Cooking", 1, true) then return "Cooking" end
-            if text:find("Enchanting", 1, true) then return "Enchanting" end
-            if text:find("Engineering", 1, true) then return "Engineering" end
-            if text:find("Inscription", 1, true) then return "Inscription" end
-            if text:find("Jewelcrafting", 1, true) then return "Jewelcrafting" end
-            if text:find("Leatherworking", 1, true) then return "Leatherworking" end
-            if text:find("Tailoring", 1, true) then return "Tailoring" end
+    local status = OneWoW.Collectibles.GetItemCollectionStatus(itemID, itemLink, {
+        hyperlink = itemLink,
+        light = true,
+    })
+    local known = false
+    if status then
+        known = status.collected == true
+    else
+        local _, _, _, _, _, classID = C_Item.GetItemInfoInstant(itemLink)
+        if classID == Enum.ItemClass.Recipe then
+            local Scanner = OneWoW.TooltipScanner
+            known = Scanner:IsAlreadyKnown(Scanner:GetHyperlinkData(itemLink)) == true
         end
     end
-    return nil
+    state.knownCache[itemID] = known
+    return known
+end
+
+local function GetProfessionFromItem(itemLink)
+    if not itemLink then return nil end
+    local _, _, _, _, _, classID, subclassID = C_Item.GetItemInfoInstant(itemLink)
+    if classID ~= Enum.ItemClass.Recipe then return nil end
+    return RECIPE_SUBCLASS_TO_PROF[subclassID]
 end
 
 local professionList = {
@@ -317,7 +298,7 @@ function VPFilters.CheckVendorItemFilter(itemLink, filterType)
         local itemType = select(6, C_Item.GetItemInfo(itemLink))
         matches = itemType == "Recipe"
     elseif professionList[filterType] then
-        local profession = GetProfessionFromTooltip(itemLink)
+        local profession = GetProfessionFromItem(itemLink)
         matches = (profession == filterType)
     elseif slotFilterMap[filterType] then
         local equipSlot = select(9, C_Item.GetItemInfo(itemLink))
@@ -364,17 +345,18 @@ function VPFilters.ScanVendor()
     for i = 1, GetMerchantNumItems() do
         local itemLink = GetMerchantItemLink(i)
         if itemLink then
-            local itemType, _, _, equipSlot = select(6, C_Item.GetItemInfo(itemLink))
-            local armorType = GetArmorTypeFromLink(itemLink)
-            if armorType then state.availableFilters[armorType] = true end
+            local _, itemType, itemSubType, equipSlot, _, classID = C_Item.GetItemInfoInstant(itemLink)
+            if classID == Enum.ItemClass.Armor and itemSubType then
+                state.availableFilters[itemSubType] = true
+            end
             local label = slotLabels[equipSlot]
             if equipSlot and not nonEquipSlots[equipSlot] and label then
                 state.availableFilters["Equipable"] = true
                 state.availableFilters[label] = true
             elseif IsMount(itemLink) then state.availableFilters["Mounts"] = true
-            elseif itemType == "Recipe" then
+            elseif classID == Enum.ItemClass.Recipe or itemType == "Recipe" then
                 state.availableFilters["Patterns"] = true
-                local profession = GetProfessionFromTooltip(itemLink)
+                local profession = GetProfessionFromItem(itemLink)
                 if profession then state.availableFilters[profession] = true end
             elseif IsPet(itemLink) then state.availableFilters["Pets"] = true
             elseif IsToy(itemLink) then state.availableFilters["Toys"] = true
@@ -398,6 +380,27 @@ function VPFilters.FormatMoney(amount)
     if silver > 0 then formatted = formatted .. (formatted ~= "" and " " or "") .. silver .. "s" end
     if copper > 0 or formatted == "" then formatted = formatted .. (formatted ~= "" and " " or "") .. copper .. "c" end
     return formatted
+end
+
+--- C_Item.GetItemInfo for a live bag slot.
+--- Prefer the instance hyperlink so sell price matches OneWoW tooltips.
+--- GetItemInfo(itemID) is the unscaled template (old gear often shows copper
+--- here while the tooltip is gold).
+---@param itemInfo table
+---@param bag number|nil
+---@param slot number|nil
+function VPFilters.GetItemInfoForSlot(itemInfo, bag, slot)
+    local lookup = itemInfo.hyperlink
+    if not lookup and bag and slot then
+        lookup = C_Container.GetContainerItemLink(bag, slot)
+    end
+    if lookup then
+        local itemName, itemLink, quality, itemLevel, minLevel, itemType, itemSubType, stackCount, equipLoc, texture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent, itemDescription = C_Item.GetItemInfo(lookup)
+        if itemName then
+            return itemName, itemLink, quality, itemLevel, minLevel, itemType, itemSubType, stackCount, equipLoc, texture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent, itemDescription
+        end
+    end
+    return C_Item.GetItemInfo(itemInfo.itemID)
 end
 
 -- ============================================================
@@ -959,7 +962,7 @@ function VendorPanel:SellJunkItems()
             for slot = 1, numSlots do
                 local itemInfo = C_Container.GetContainerItemInfo(bag, slot)
                 if itemInfo and itemInfo.itemID then
-                    local itemName, _, quality, _, _, _, _, _, _, _, sellPrice = C_Item.GetItemInfo(itemInfo.itemID)
+                    local itemName, _, quality, _, _, _, _, _, _, _, sellPrice = VPFilters.GetItemInfoForSlot(itemInfo, bag, slot)
                     if itemName and sellPrice and sellPrice > 0 then
                         local isGray = quality == 0
                         local isMarked = GetItemStatus():IsItemJunk(itemInfo.itemID)
@@ -1131,12 +1134,11 @@ function VendorPanel:DestroyNextJunkItem()
             for slot = 1, numSlots do
                 local itemInfo = C_Container.GetContainerItemInfo(bag, slot)
                 if itemInfo and itemInfo.itemID then
-                    local itemName, _, quality, _, _, _, _, _, _, _, sellPrice = C_Item.GetItemInfo(itemInfo.itemID)
+                    local itemName, _, quality, _, _, _, _, _, _, _, sellPrice, classID, subclassID = VPFilters.GetItemInfoForSlot(itemInfo, bag, slot)
                     if not self:IsItemInNeverSellList(itemInfo.itemID) and
                        not GetItemStatus():IsItemProtected(itemInfo.itemID) then
                         local isUserMarked = GetItemStatus():IsItemJunk(itemInfo.itemID)
                         local isGray = quality and quality == 0
-                        local classID, subclassID = select(12, C_Item.GetItemInfo(itemInfo.itemID))
                         local isGameJunk = (classID == Enum.ItemClass.Miscellaneous and subclassID == Enum.ItemMiscellaneousSubclass.Junk)
                         local isIlvlGear = state.oneTimeItems.ilvlGear[itemInfo.itemID]
                         local isReagent = state.oneTimeItems.reagents[itemInfo.itemID]
@@ -1179,7 +1181,7 @@ function VendorPanel:DeleteAllNoValueJunk()
             for slot = 1, numSlots do
                 local itemInfo = C_Container.GetContainerItemInfo(bag, slot)
                 if itemInfo and itemInfo.itemID then
-                    local itemName, _, quality, _, _, _, _, _, _, _, sellPrice, classID, subclassID = C_Item.GetItemInfo(itemInfo.itemID)
+                    local itemName, _, quality, _, _, _, _, _, _, _, sellPrice, classID, subclassID = VPFilters.GetItemInfoForSlot(itemInfo, bag, slot)
                     if not self:IsItemInNeverSellList(itemInfo.itemID) and
                        not GetItemStatus():IsItemProtected(itemInfo.itemID) then
                         local isUserMarked = GetItemStatus():IsItemJunk(itemInfo.itemID)
@@ -1233,7 +1235,7 @@ function VendorPanel:AddNonSoulboundReagents()
             for slot = 1, numSlots do
                 local itemInfo = C_Container.GetContainerItemInfo(bag, slot)
                 if itemInfo and itemInfo.itemID then
-                    local itemName, _, quality, _, _, _, _, _, _, _, sellPrice, classID = C_Item.GetItemInfo(itemInfo.itemID)
+                    local itemName, _, quality, _, _, _, _, _, _, _, sellPrice, classID = VPFilters.GetItemInfoForSlot(itemInfo, bag, slot)
                     if itemName and sellPrice and sellPrice > 0 then
                         local itemLocation = ItemLocation:CreateFromBagAndSlot(bag, slot)
                         if not GetItemStatus():IsItemProtected(itemInfo.itemID) then
@@ -1271,7 +1273,7 @@ function VendorPanel:AddConsumables()
             for slot = 1, numSlots do
                 local itemInfo = C_Container.GetContainerItemInfo(bag, slot)
                 if itemInfo and itemInfo.itemID then
-                    local itemName, _, quality, _, _, _, _, _, _, _, sellPrice, classID = C_Item.GetItemInfo(itemInfo.itemID)
+                    local itemName, _, quality, _, _, _, _, _, _, _, sellPrice, classID = VPFilters.GetItemInfoForSlot(itemInfo, bag, slot)
                     if itemName and sellPrice and sellPrice > 0 then
                         local itemLocation = ItemLocation:CreateFromBagAndSlot(bag, slot)
                         if not GetItemStatus():IsItemProtected(itemInfo.itemID) then
@@ -1306,7 +1308,7 @@ function VendorPanel:AddWhiteQuality()
             for slot = 1, numSlots do
                 local itemInfo = C_Container.GetContainerItemInfo(bag, slot)
                 if itemInfo and itemInfo.itemID then
-                    local itemName, _, quality, _, _, _, _, _, _, _, sellPrice = C_Item.GetItemInfo(itemInfo.itemID)
+                    local itemName, _, quality, _, _, _, _, _, _, _, sellPrice = VPFilters.GetItemInfoForSlot(itemInfo, bag, slot)
                     if itemName and sellPrice and sellPrice > 0 then
                         local itemLocation = ItemLocation:CreateFromBagAndSlot(bag, slot)
                         if not GetItemStatus():IsItemProtected(itemInfo.itemID) then
@@ -1346,7 +1348,7 @@ function VendorPanel:AddGearBelowIlvl(targetIlvl)
             for slot = 1, numSlots do
                 local itemInfo = C_Container.GetContainerItemInfo(bag, slot)
                 if itemInfo and itemInfo.itemID then
-                    local itemName, _, quality, _, _, _, _, _, _, _, sellPrice, classID = C_Item.GetItemInfo(itemInfo.itemID)
+                    local itemName, _, quality, _, _, _, _, _, _, _, sellPrice, classID = VPFilters.GetItemInfoForSlot(itemInfo, bag, slot)
                     if itemName and sellPrice and sellPrice > 0 then
                         local itemLevel = 0
                         local itemLocation = ItemLocation:CreateFromBagAndSlot(bag, slot)
@@ -1417,7 +1419,7 @@ function VendorPanel:GetSearchMatches(expr, collectDetails)
                         itemIDs[itemInfo.itemID] = true
                         if detailLimit > 0 and #items < detailLimit then
                             local itemName, itemLink, _, _, _, _, _, _, _, itemTexture, sellPrice =
-                                C_Item.GetItemInfo(itemInfo.itemID)
+                                VPFilters.GetItemInfoForSlot(itemInfo, bag, slot)
                             if not itemName then
                                 C_Item.RequestLoadItemDataByID(itemInfo.itemID)
                                 itemName = "Item " .. itemInfo.itemID
@@ -1430,6 +1432,10 @@ function VendorPanel:GetSearchMatches(expr, collectDetails)
                                     itemLevel = item:GetCurrentItemLevel() or 0
                                     actualItemLink = item:GetItemLink() or itemLink
                                 end
+                            end
+                            if actualItemLink then
+                                local instanceSell = select(11, C_Item.GetItemInfo(actualItemLink))
+                                if instanceSell ~= nil then sellPrice = instanceSell end
                             end
                             items[#items + 1] = {
                                 itemID = itemInfo.itemID,
@@ -1536,7 +1542,7 @@ function VendorPanel:AddSoulboundEquipment()
                 local itemInfo = C_Container.GetContainerItemInfo(bag, slot)
                 if itemInfo and itemInfo.itemID and not inSet[itemInfo.itemID]
                    and not GetItemStatus():IsItemProtected(itemInfo.itemID) then
-                    local classID = select(12, C_Item.GetItemInfo(itemInfo.itemID))
+                    local classID = select(12, VPFilters.GetItemInfoForSlot(itemInfo, bag, slot))
                     local isEquipment = (classID == Enum.ItemClass.Weapon or classID == Enum.ItemClass.Armor)
                     if isEquipment then
                         local itemLocation = ItemLocation:CreateFromBagAndSlot(bag, slot)
@@ -1740,6 +1746,7 @@ function VendorPanel:OnMerchantShow()
     state.dimKnownItems = settings.dimKnownItems or false
     state._merchantLinkRetries = 0
     state._knownDimRetryScheduled = false
+    wipe(state.knownCache)
 
     if not state.vendorButton then
         self:CreateVendorButton()
@@ -1810,6 +1817,7 @@ function VendorPanel:OnMerchantClosed()
     state.activePanelTab = "sell"
     state.currentVendorFilter = "Show All"
     wipe(state.availableFilters)
+    wipe(state.knownCache)
     state.oneTimeItems.ilvlGear = {}
     state.oneTimeItems.reagents = {}
     state.oneTimeItems.custom = {}

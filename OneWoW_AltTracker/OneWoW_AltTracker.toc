@@ -1,5 +1,5 @@
 ## Interface: 120007, 120100
-## Version: R6.2608.2707
+## Version: R6.2608.2805
 ## Title: |cFFFFD100OneWoW|r - |cFF00FF00AltTracker|r
 ## Notes: OneWoW Addon that: tracks all your characters' progress, gold, professions, bank, auctions, and more.
 ## Author: OneWoW Dev Team
@@ -62,6 +62,7 @@ Modules\alttracker\actionbars-compat.lua
 UI\Framework.lua
 UI\MailDetail.lua
 # Tab UI Files
+UI\ProgressTracking.lua
 UI\t-summary.lua
 UI\t-progress.lua
 UI\t-bank.lua

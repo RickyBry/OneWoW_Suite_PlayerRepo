@@ -53,8 +53,10 @@ local COL_ORDER_RIGHT = COL_YOU_RIGHT + YOU_W + COL_GAP
 
 local function PlaceColLabel(fs, parent, rightInset, width, justifyH)
     fs:ClearAllPoints()
-    fs:SetPoint("TOPLEFT", parent, "RIGHT", -(rightInset + width), 0)
-    fs:SetPoint("BOTTOMRIGHT", parent, "RIGHT", -rightInset, 0)
+    -- TOPRIGHT/BOTTOMRIGHT give the label the parent's height. RIGHT is a
+    -- single midpoint, so TOP+BOTTOM on it would collapse the fontstring.
+    fs:SetPoint("TOPLEFT", parent, "TOPRIGHT", -(rightInset + width), 0)
+    fs:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -rightInset, 0)
     fs:SetJustifyH(justifyH or "LEFT")
     fs:SetJustifyV("MIDDLE")
     fs:SetWordWrap(true)
@@ -282,6 +284,8 @@ local function BindHeader(row, entry)
     row.nameText:SetPoint("RIGHT", row, "RIGHT", -8, 0)
     if entry.section == "ready" then
         row.nameText:SetText(L["CRAFTORDERS_SECTION_READY"] .. " (" .. entry.count .. ")")
+    elseif entry.section == "unknown" then
+        row.nameText:SetText(PROFESSIONS_RECIPE_UNLEARNED .. " (" .. entry.count .. ")")
     else
         row.nameText:SetText(L["CRAFTORDERS_SECTION_MISSING"] .. " (" .. entry.count .. ")")
     end
@@ -328,7 +332,7 @@ local function BindRow(row, entry)
     BindStrip(row.customerMats, entry.customerReagents, "customer")
     BindStrip(row.rewards, entry.rewardIcons, "reward")
 
-    local showAdd = entry.kind == "order" and entry.section == "missing"
+    local showAdd = entry.kind == "order" and entry.section ~= "ready"
         and entry.missingReagents and #entry.missingReagents > 0
     row.addBtn._entry = entry
     row.addBtn:SetShown(showAdd)
@@ -706,6 +710,20 @@ function M:EnsureModeButton()
     end)
     btn:SetScript("OnLeave", GameTooltip_Hide)
     M._modeBtn = btn
+
+    local settingsBtn = OneWoW_GUI:CreateIconButton(browse, {
+        iconTexture = OneWoW_GUI.Constants.MEDIA_BASE .. "icon-gears.png",
+        size = 22,
+        tooltipTitle = L["OPEN_SETTINGS"],
+        onClick = function()
+            ns.UI.SelectFeature("craftingorders")
+        end,
+    })
+    settingsBtn:SetPoint("LEFT", btn, "RIGHT", SPACING.SM, 0)
+    settingsBtn:SetFrameStrata("HIGH")
+    settingsBtn:SetFrameLevel(browse.PersonalOrdersButton:GetFrameLevel() + 2)
+    M._settingsBtn = settingsBtn
+
     OneWoW_GUI:RegisterFontRoot(btn, function()
         M:UpdateModeButton()
     end)
@@ -718,9 +736,11 @@ function M:UpdateModeButton()
     if not btn then return end
     if not ModuleOn() then
         btn:Hide()
+        M._settingsBtn:Hide()
         return
     end
     btn:Show()
+    M._settingsBtn:Show()
     if M:WantsOverlay() then
         btn:SetFitText(L["CRAFTORDERS_USE_WOWUI"])
     else

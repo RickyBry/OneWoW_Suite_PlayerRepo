@@ -29,7 +29,7 @@ UI panels, map tools, bars, and screen customization.
 - **Bag Bar** — movable bar of bag items matched by keyword expression
 - **Quest Item Bar** — clickable quest-item buttons with sorting and filters ([details](Modules/external/questitembar/README.md))
 - **Professions Panel** — expansion skills, recipe counts, and first-craft tracking beside the profession window
-- **Crafting Orders** — Craftable now / Missing mats on the profession orders page; add missing mats to a Shopping List; start, craft, and complete from one button
+- **Crafting Orders** — Craftable now / Missing mats / Recipe Unlearned on the profession orders page; add missing mats to a Shopping List; start, craft, and complete from one button
 - **Character Info Sheet** — ilvl, enchants, gems, and durability on the character sheet
 - **Coords Display** — map coordinates near the minimap (right-click to copy)
 - **Cursor Enhancer** — ring and optional mouse trail
@@ -115,7 +115,9 @@ Supports all 11 suite locales — see [LOCALES.md](../OneWoW/Docs/LOCALES.md).
 
 ## Contributing
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md).
+See [CONTRIBUTING.md](../CONTRIBUTING.md). Original modules: set `author` in
+`module.lua` to your name ([DEVELOPERS.md](DEVELOPERS.md),
+[MODULE_CREDITS.md](../MODULE_CREDITS.md)).
 
 ## Support
 
@@ -133,4 +135,4 @@ Part of the [OneWoW Suite](../README.md). See the suite README for the full addo
 
 **Website:** https://onewow.net/
 
-**License:** See [LICENSE.md](../LICENSE.md). Copyright the OneWoW Development Team. All rights reserved.
+**License:** See [LICENSE.md](../LICENSE.md). Copyright the OneWoW Development Team except third-party files and community modules that name their own license ([MODULE_CREDITS.md](../MODULE_CREDITS.md)). All rights reserved.
