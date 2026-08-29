@@ -133,7 +133,7 @@ local ADDON_SETTINGS_MAP = {
         dbName = "OneWoW_Notes_DB",
         displayName = "Notes",
         acedb = true,
-        keys = {"language", "theme", "minimap", "lastTab", "mainFrameSize", "mainFramePosition", "sortCompletedTasks", "zoneAlertsEnabled", "npcScanEnabled", "playerScanEnabled"},
+        keys = {"language", "theme", "minimap", "lastTab", "mainFrameSize", "mainFramePosition", "sortCompletedTasks", "zoneAlertsEnabled", "npcScanEnabled", "playerScanEnabled", "pinnedScale"},
     },
     {
         dbName = "OneWoW_Catalog_DB",
@@ -144,7 +144,7 @@ local ADDON_SETTINGS_MAP = {
     {
         dbName = "OneWoW_Bags_DB",
         displayName = "Bags",
-        keys = {"language", "theme", "minimap", "viewMode", "columns", "scale", "iconSize", "autoOpen", "autoClose", "locked", "showBagsBar", "showNewItems", "recentItemDuration", "categorySort", "showEmptySlots"},
+        keys = {"language", "theme", "minimap", "viewMode", "columns", "bagScale", "bankScale", "warbandBankScale", "guildBankScale", "iconSize", "autoOpen", "autoClose", "locked", "showBagsBar", "showNewItems", "recentItemDuration", "categorySort", "showEmptySlots"},
     },
     {
         dbName = "OneWoW_DirectDeposit_DB",
