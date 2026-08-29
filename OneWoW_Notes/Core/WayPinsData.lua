@@ -4,7 +4,7 @@ local L = ns.L
 local Location = OneWoW.Location
 
 local CopyTable = CopyTable
-local pairs, ipairs, type, tonumber = pairs, ipairs, type, tonumber
+local pairs, ipairs, type, tonumber, tostring = pairs, ipairs, type, tonumber, tostring
 local tinsert, sort, format = tinsert, sort, string.format
 local GetServerTime = GetServerTime
 local C_Map = C_Map
@@ -36,6 +36,17 @@ local function CopyIcon(spec)
         icon.tint = { spec.tint[1], spec.tint[2], spec.tint[3] }
     end
     return icon
+end
+
+local function CopyDescription(text)
+    if type(text) ~= "string" then
+        return nil
+    end
+    text = text:gsub("^%s+", ""):gsub("%s+$", "")
+    if text == "" then
+        return nil
+    end
+    return text
 end
 
 local function CopyBg(bg)
@@ -87,6 +98,41 @@ function WayPins:GetPin(pinID)
     return self:GetAll()[pinID]
 end
 
+local function SourceKeyMatch(a, b)
+    if a == nil or b == nil then
+        return false
+    end
+    return tostring(a) == tostring(b)
+end
+
+--- First pin with this source, sourceKey, and map. Nil sourceKey never matches.
+---@param source string|nil
+---@param sourceKey any
+---@param mapID number|nil
+---@return table|nil pin
+function WayPins:FindBySource(source, sourceKey, mapID)
+    if type(source) ~= "string" or source == "" or sourceKey == nil then
+        return nil
+    end
+    mapID = tonumber(mapID)
+    if not mapID or mapID == 0 then
+        return nil
+    end
+    local first
+    for _, pin in pairs(self:GetAll()) do
+        if type(pin) == "table"
+            and pin.source == source
+            and SourceKeyMatch(pin.sourceKey, sourceKey)
+            and tonumber(pin.mapID) == mapID
+        then
+            if not first or (pin.id or "") < (first.id or "") then
+                first = pin
+            end
+        end
+    end
+    return first
+end
+
 --- Pins for a uiMapID, title-sorted.
 ---@param mapID number|nil
 ---@return table[]
@@ -124,6 +170,13 @@ function WayPins:Add(fields)
         return nil
     end
 
+    if fields.source and fields.sourceKey ~= nil then
+        local existing = self:FindBySource(fields.source, fields.sourceKey, mapID)
+        if existing then
+            return existing.id
+        end
+    end
+
     local pinID = fields.id
     if type(pinID) ~= "string" or not pinID:match("^wp_") then
         pinID = self:MakeNewId()
@@ -136,21 +189,22 @@ function WayPins:Add(fields)
 
     local storage = fields.storage == "character" and "character" or "account"
     local pin = {
-        id        = pinID,
-        title     = title,
-        mapID     = mapID,
-        x         = x,
-        y         = y,
-        icon      = CopyIcon(fields.icon),
-        bg        = CopyBg(fields.bg),
-        effect    = CopyEffect(fields.effect),
-        mapSize      = tonumber(fields.mapSize),
-        minimapSize  = tonumber(fields.minimapSize),
-        source    = fields.source or "manual",
-        sourceKey = fields.sourceKey,
-        storage   = storage,
-        created   = fields.created or GetServerTime(),
-        modified  = GetServerTime(),
+        id          = pinID,
+        title       = title,
+        description = CopyDescription(fields.description),
+        mapID       = mapID,
+        x           = x,
+        y           = y,
+        icon        = CopyIcon(fields.icon),
+        bg          = CopyBg(fields.bg),
+        effect      = CopyEffect(fields.effect),
+        mapSize     = tonumber(fields.mapSize),
+        minimapSize = tonumber(fields.minimapSize),
+        source      = fields.source or "manual",
+        sourceKey   = fields.sourceKey,
+        storage     = storage,
+        created     = fields.created or GetServerTime(),
+        modified    = GetServerTime(),
     }
 
     local targetDB = self:GetDataDB(storage)
@@ -165,6 +219,7 @@ function WayPins:Save(pinID, pin)
     pin.mapID = tonumber(pin.mapID) or pin.mapID
     pin.x = tonumber(pin.x) or pin.x
     pin.y = tonumber(pin.y) or pin.y
+    pin.description = CopyDescription(pin.description)
     pin.icon = CopyIcon(pin.icon)
     pin.bg = CopyBg(pin.bg)
     pin.effect = CopyEffect(pin.effect)
@@ -185,7 +240,25 @@ end
 
 function WayPins:Remove(pinID)
     if not pinID then return end
-    ns.DataModule.Remove(self, pinID)
+    local pin = self:GetPin(pinID)
+    if pin and pin.source and pin.sourceKey ~= nil then
+        local source, sourceKey, mapID = pin.source, pin.sourceKey, pin.mapID
+        local ids = {}
+        for id, other in pairs(self:GetAll()) do
+            if type(other) == "table"
+                and other.source == source
+                and SourceKeyMatch(other.sourceKey, sourceKey)
+                and tonumber(other.mapID) == tonumber(mapID)
+            then
+                tinsert(ids, id)
+            end
+        end
+        for _, id in ipairs(ids) do
+            ns.DataModule.Remove(self, id)
+        end
+    else
+        ns.DataModule.Remove(self, pinID)
+    end
     NotifyChanged()
 end
 

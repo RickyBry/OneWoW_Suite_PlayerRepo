@@ -688,6 +688,8 @@ local link = OneWoW_GUI:CreateTextLink(parent, {
     text = "Open in Bags",
     fontSize = 11,    -- optional, default 12
     nav = true,       -- optional: smaller ASCII `>` after the label (in-hub navigation)
+    tooltipTitle = L.HINT_TITLE, -- optional
+    tooltipText = L.HINT,       -- optional second line
     onClick = function()
         -- handle click
     end,
@@ -695,6 +697,7 @@ local link = OneWoW_GUI:CreateTextLink(parent, {
 ```
 Fit-width button with no backdrop. Idle `LINK_IDLE` + subtle `LINK_UNDERLINE`, hover `LINK_HOVER`, Point cursor.
 `nav = true` appends a smaller `>` (ASCII — safe across fonts) for “go elsewhere” links; omit for actions / external URLs.
+`tooltipTitle` / `tooltipText` show on hover (same as `CreateFitTextButton`). Mutate `link.tooltipTitle` / `link.tooltipText` after create if the label changes.
 `link:SetText(s)` refits width; `link:SetEnabled(false)` mutes to `TEXT_MUTED`.
 Access label via `link.text` (chevron via `link.chevron` when `nav`).
 
@@ -1411,6 +1414,10 @@ list.SetSelectedIndex(1)
   title text for hover or select (Catalog Journal / Vendors / Item Search).
 - **`createRow` / `bindRow`:** create widgets once; bind on every visible update.
   Nested controls must read `row.entryIndex` (live), not a closed-over create-time index.
+- **Reorder on a pooled list:** set `row._reorderIndex` in `bindRow` to the data-bag
+  index (not the flattened or pool index). `CreateReorderDrag` prefers that field.
+  Attach once in `createRow`. Rows mid-drag (`_oneWoWReorderOrigPoints`) are skipped
+  so auto-scroll does not steal the ghost.
 - **Tooltips:** set `row._tooltipFullText`; the engine wires `OnEnter`/`OnLeave` when
   the row has no `OnEnter` yet.
 - **Adopted scroll:** pass `scrollFrame` + `content` to host inside `CreateSplitPanel`

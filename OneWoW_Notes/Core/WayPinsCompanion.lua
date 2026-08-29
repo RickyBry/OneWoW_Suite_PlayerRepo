@@ -13,7 +13,7 @@ local IsControlKeyDown = IsControlKeyDown
 -- WayPinsCompanion
 -- ============================================================================
 -- List of OneWay Pins for the current map, docked to the right of a Zone Notes
--- pinned window (or filling it when Hide Zone Notes is on). Chrome copies the
+-- pinned window (or filling it when Show Zone Notes is off). Chrome copies the
 -- host note so the two boxes read as one. One companion per map.
 -- ============================================================================
 
@@ -41,6 +41,38 @@ local function HostHidesNote(host)
     end
     local zd = ns.Zones:GetZone(host.noteId)
     return Visual.Enabled() and zd and zd.hideZoneNote == true and zd.showWayPins ~= false
+end
+
+local function HostHidesScrollBar(host)
+    host = host or hostFrame
+    if not host or not host.noteId or not ns.Zones then
+        return false
+    end
+    local zd = ns.Zones:GetZone(host.noteId)
+    return zd and zd.hideScrollBar == true
+end
+
+local function ApplyScrollBarVisibility(host)
+    if not frame or not frame.scroll then
+        return
+    end
+    local bar = frame.scroll.ScrollBar
+    if not bar then
+        return
+    end
+    host = host or hostFrame
+    if host and hostFrame and host ~= hostFrame then
+        return
+    end
+    if HostHidesScrollBar(host or hostFrame) then
+        bar:Hide()
+        bar:SetAlpha(0)
+        bar:EnableMouse(false)
+    else
+        bar:SetAlpha(1)
+        bar:EnableMouse(true)
+        bar:Show()
+    end
 end
 
 local function EnsureFrame()
@@ -135,6 +167,25 @@ local function EnsureFrame()
         end
         Companion:CollapseHost()
     end)
+    frame.closeBtn = closeBtn
+
+    local minimizeBtn = CreateFrame("Button", nil, titleBar)
+    minimizeBtn:SetSize(16, 16)
+    minimizeBtn:SetPoint("RIGHT", closeBtn, "LEFT", -2, 0)
+    minimizeBtn:SetNormalTexture("Interface\\Buttons\\UI-MinusButton-UP")
+    minimizeBtn:SetPushedTexture("Interface\\Buttons\\UI-MinusButton-UP")
+    minimizeBtn:SetHighlightTexture("Interface\\Buttons\\UI-MinusButton-UP")
+    minimizeBtn:SetScript("OnClick", function()
+        if hostFrame and hostFrame.ToggleCollapsed then
+            hostFrame:ToggleCollapsed()
+        end
+    end)
+    minimizeBtn:SetScript("OnEnter", function(myself)
+        PinSupport.ShowTooltip(myself, "ANCHOR_BOTTOM", MINIMIZE)
+    end)
+    minimizeBtn:SetScript("OnLeave", PinSupport.HideTooltip)
+    minimizeBtn:Hide()
+    frame.minimizeBtn = minimizeBtn
 
     local addBtn = OneWoW_GUI:CreateFitTextButton(titleBar, { text = ADD, height = 18, minWidth = 36 })
     addBtn:SetPoint("RIGHT", closeBtn, "LEFT", -2, 0)
@@ -165,6 +216,16 @@ local function EnsureFrame()
     scroll:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -8, 8)
     frame.scroll = scroll
     frame.child = child
+    local bar = scroll.ScrollBar
+    if bar then
+        bar:HookScript("OnShow", function(myself)
+            if HostHidesScrollBar(hostFrame) then
+                myself:Hide()
+                myself:SetAlpha(0)
+                myself:EnableMouse(false)
+            end
+        end)
+    end
     child:EnableMouse(true)
     child:SetScript("OnMouseUp", function(myself, button)
         if button == "RightButton" then
@@ -206,6 +267,26 @@ function Companion:ApplyClusterLayout(host)
     host = host or hostFrame
     if not host then return end
     local hover = host.hoverPanel
+
+    if host.collapsed then
+        if frame then frame:Hide() end
+        if host._widthBeforeHideNote then
+            host:SetWidth(host._widthBeforeHideNote)
+            host._widthBeforeHideNote = nil
+        end
+        if host.titleBar then host.titleBar:Show() end
+        if host.closeBtn then host.closeBtn:Show() end
+        if host.minimizeBtn then host.minimizeBtn:Show() end
+        if host.resizeBtn then host.resizeBtn:Hide() end
+        if hover then
+            hover:Hide()
+            hover:ClearAllPoints()
+            hover:SetPoint("TOPLEFT", host, "BOTTOMLEFT", 0, 0)
+            hover:SetPoint("TOPRIGHT", host, "BOTTOMRIGHT", 0, 0)
+        end
+        return
+    end
+
     if not frame or not frame:IsShown() then
         if host._widthBeforeHideNote then
             host:SetWidth(host._widthBeforeHideNote)
@@ -213,6 +294,7 @@ function Companion:ApplyClusterLayout(host)
         end
         if host.titleBar then host.titleBar:Show() end
         if host.closeBtn then host.closeBtn:Show() end
+        if host.minimizeBtn then host.minimizeBtn:Show() end
         if hover then
             hover:ClearAllPoints()
             hover:SetPoint("TOPLEFT", host, "BOTTOMLEFT", 0, 0)
@@ -230,6 +312,7 @@ function Companion:ApplyClusterLayout(host)
         if host.contentFrame then host.contentFrame:Hide() end
         if host.todoMainFrame then host.todoMainFrame:Hide() end
         if host.closeBtn then host.closeBtn:Hide() end
+        if host.minimizeBtn then host.minimizeBtn:Hide() end
         host:SetWidth(COMPANION_WIDTH)
         frame:ClearAllPoints()
         frame:SetPoint("TOPLEFT", host, "TOPLEFT", 0, 0)
@@ -242,10 +325,25 @@ function Companion:ApplyClusterLayout(host)
         end
         if host.titleBar then host.titleBar:Show() end
         if host.closeBtn then host.closeBtn:Show() end
+        if host.minimizeBtn then host.minimizeBtn:Show() end
         frame:ClearAllPoints()
         frame:SetPoint("TOPLEFT", host, "TOPRIGHT", 4, 0)
         frame:SetPoint("BOTTOMLEFT", host, "BOTTOMRIGHT", 4, 0)
         frame:SetWidth(COMPANION_WIDTH)
+    end
+
+    if frame.minimizeBtn then
+        if hideNote then
+            frame.minimizeBtn:Show()
+            if frame.addBtn then
+                frame.addBtn:SetPoint("RIGHT", frame.minimizeBtn, "LEFT", -2, 0)
+            end
+        else
+            frame.minimizeBtn:Hide()
+            if frame.addBtn then
+                frame.addBtn:SetPoint("RIGHT", frame.closeBtn, "LEFT", -2, 0)
+            end
+        end
     end
 
     if host.resizeBtn then
@@ -262,6 +360,8 @@ function Companion:ApplyClusterLayout(host)
             hover:SetPoint("TOPRIGHT", host, "BOTTOMRIGHT", 0, 0)
         end
     end
+
+    ApplyScrollBarVisibility(host)
 end
 
 local function AcquireRow(parent)
@@ -293,8 +393,7 @@ local function AcquireRow(parent)
         local pin = myself.pinData
         if pin then
             GameTooltip:SetOwner(myself, "ANCHOR_RIGHT")
-            GameTooltip:SetText(pin.title or L["WAYPINS_UNTITLED"], 1, 1, 1)
-            GameTooltip:AddLine(L["WAYPINS_COMPANION_TT"], OneWoW_GUI:GetThemeColor("TEXT_SECONDARY"))
+            ns.WayPinsTooltip.Fill(GameTooltip, pin, L["WAYPINS_COMPANION_TT"])
             GameTooltip:Show()
         end
         if hostFrame and hostFrame.ShowHoverControls then
@@ -362,6 +461,7 @@ function Companion:RefreshRows()
         y = y + ROW_HEIGHT
     end
     frame.child:SetHeight(math.max(y, 1))
+    ApplyScrollBarVisibility(hostFrame)
 end
 
 function Companion:CollapseHost()
@@ -451,6 +551,12 @@ function Companion:ResumeAfterMap()
     self:Sync()
 end
 
+--- Hide or show the pin-list scrollbar. Wheel scrolling still works when hidden.
+---@param host Frame|nil
+function Companion:ApplyScrollBarVisibility(host)
+    ApplyScrollBarVisibility(host)
+end
+
 function Companion:ShowDocked(host)
     EnsureFrame()
     hostFrame = host
@@ -474,7 +580,7 @@ function Companion:Sync()
     local host
     if ns.zonePins then
         for noteId, pinFrame in pairs(ns.zonePins) do
-            if pinFrame and pinFrame:IsShown() then
+            if pinFrame and pinFrame:IsShown() and not pinFrame.collapsed then
                 local zd = ns.Zones:GetZone(noteId)
                 if zd and zd.showWayPins ~= false then
                     host = pinFrame
