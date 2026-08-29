@@ -446,8 +446,7 @@ in-game — there is otherwise no visibility into the success path of dispatch.
 | `/1wtrace dump` | Print the buffer, oldest-first, as a `[+Δs] phase unit detail` timeline |
 | `/1wtrace` | Usage + current recording state |
 
-`/owtrace` is an alias. Strings are hardcoded English (dev tool, not user-facing
-UI — same precedent as Bags' `/owblayout`).
+Strings are hardcoded English (dev tool, not user-facing UI).
 
 **Capturing startup is the design constraint.** The whole orchestration
 (`RunStartupPhase` → `BringUp` → `LoadAddOn` hook → `RunManifestLoginPhase` →
@@ -642,6 +641,12 @@ do not fit (rightmost overflow) stay favorited and appear under a Favorites grou
 at the top of the L2 menu. Order persists in `ns.db.global.subTabFavorites`
 (`[moduleName] = { subTabName, ... }`). Last section/sub-tab selection persists in
 `ns.db.global.lastModuleTab` / `lastSubTabs`.
+
+The title bar has session-only **Back** and **Forward** (cap 8).
+`SelectModuleTab` / `SelectSubTab` and `Open*` jumps record the leaving
+`(module, subtab, entity)`. Hide and `FullReset` wipe the stack; last-tab
+SavedVariables are unchanged. Content frames may implement `GetNavEntity` /
+`RestoreNavEntity` so Back can re-select a quest, NPC, vendor, or similar.
 
 ### 5.1 ModuleRegistry
 

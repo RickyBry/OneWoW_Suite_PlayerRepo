@@ -1,5 +1,5 @@
 ## Interface: 120007, 120100
-## Version: R6.2608.2805
+## Version: R6.2608.2902
 ## Title: |cFF00FF00OneWoW|r
 ## Notes: OneWoW - Central Hub for all OneWoW addons
 ## Author: OneWoW Dev Team
@@ -112,6 +112,7 @@ Core\FirstRunWizard.lua
 Core\FeatureHealth.lua
 Core\WhatsNewData.lua
 Core\WhatsNew.lua
+Core\VersionCheck.lua
 
 # Services (shared OneWoW.* engines/utilities consumed cross-unit — see ARCHITECTURE §6).
 # DO NOT reorder within this block: TooltipScanner before PredicateEngine (PE
@@ -186,6 +187,7 @@ Search\SearchFrame.lua
 
 # Hub UI
 UI\navigation.lua
+UI\NavHistory.lua
 UI\MainWindow.lua
 UI\Minimap.lua
 UI\t-home.lua
