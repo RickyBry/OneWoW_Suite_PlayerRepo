@@ -557,7 +557,9 @@ local function WireJournalPinButton(btn, getInstData)
         else
             GameTooltip:AddLine(L["JOURNAL_MAP_PIN_TT"], 0.8, 0.8, 0.8, true)
         end
-        GameTooltip:AddLine(L["JOURNAL_MAP_PIN_SAVE_TT"], 0.8, 0.8, 0.8, true)
+        if ns.Navigation:IsWayPinsEnabled() then
+            GameTooltip:AddLine(L["JOURNAL_MAP_PIN_SAVE_TT"], 0.8, 0.8, 0.8, true)
+        end
         GameTooltip:Show()
     end)
 end
@@ -687,7 +689,9 @@ local function CreateInstanceListRow(parent, _)
             return
         end
         if button == "RightButton" then
-            ns.Navigation:SaveInstanceEntranceWayPin(instData)
+            if ns.Navigation:IsWayPinsEnabled() then
+                ns.Navigation:SaveInstanceEntranceWayPin(instData)
+            end
             return
         end
         ns.Navigation:OpenInstanceEntrance(instData.instanceID, instData.entrances)
@@ -732,7 +736,8 @@ local CARD_TAG_PAD_X = 8
 local CARD_TAG_ROW1_Y = 18
 local CARD_TAG_ROW2_Y = 6
 
-local function BindInstanceListRow(row, _, instData, state)
+local function BindInstanceListRow(row, index, instData, state)
+    row._zebraIndex = index
     row.instData = instData
     row._rowSelected = state.selected and true or false
     local addon = GetDataAddon()
@@ -1012,16 +1017,26 @@ local function ResolveOpenQuestID(item)
     return fallback
 end
 
+local function PaintDetailItemRow(row, hover)
+    if hover then
+        OneWoW_GUI:ApplyListRowFill(row, { hover = true })
+        row:SetBackdropBorderColor(OneWoW_GUI:GetThemeColor("BORDER_FOCUS"))
+    else
+        OneWoW_GUI:ApplyListRowFill(row, { zebraIndex = row._zebraIndex })
+        row:SetBackdropBorderColor(OneWoW_GUI:GetThemeColor("BORDER_SUBTLE"))
+    end
+end
+
 -- Renders one row in the "Quest Related / Quest Drop" encounter:
 -- {icon} {name}   {itemID}  Quest: (faction: id ...)   [Click For Link]
-local function BuildQuestItemRow(parent, item, yOffset)
+local function BuildQuestItemRow(parent, item, yOffset, zebraIndex)
     local itemRow = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     itemRow:SetPoint("TOPLEFT", parent, "TOPLEFT", 8, yOffset)
     itemRow:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -8, yOffset)
     itemRow:SetHeight(ITEM_ROW_HEIGHT)
     itemRow:SetBackdrop(BACKDROP_SIMPLE)
-    itemRow:SetBackdropColor(OneWoW_GUI:GetThemeColor("BG_PRIMARY"))
-    itemRow:SetBackdropBorderColor(OneWoW_GUI:GetThemeColor("BORDER_SUBTLE"))
+    itemRow._zebraIndex = zebraIndex or 1
+    PaintDetailItemRow(itemRow, false)
     table.insert(detailElements, itemRow)
 
     local iconFrame = CreateFrame("Frame", nil, itemRow, "BackdropTemplate")
@@ -1108,15 +1123,13 @@ local function BuildQuestItemRow(parent, item, yOffset)
 
     itemRow:EnableMouse(true)
     itemRow:SetScript("OnEnter", function(myself)
-        myself:SetBackdropColor(OneWoW_GUI:GetThemeColor("BG_HOVER"))
-        myself:SetBackdropBorderColor(OneWoW_GUI:GetThemeColor("BORDER_FOCUS"))
+        PaintDetailItemRow(myself, true)
         GameTooltip:SetOwner(myself, "ANCHOR_RIGHT")
         GameTooltip:SetItemByID(item.itemID)
         GameTooltip:Show()
     end)
     itemRow:SetScript("OnLeave", function(myself)
-        myself:SetBackdropColor(OneWoW_GUI:GetThemeColor("BG_PRIMARY"))
-        myself:SetBackdropBorderColor(OneWoW_GUI:GetThemeColor("BORDER_SUBTLE"))
+        PaintDetailItemRow(myself, false)
         GameTooltip:Hide()
     end)
 
@@ -1321,7 +1334,7 @@ local function BuildAchievementsTable(parent, instData, yOffset)
         return yOffset - 8
     end
 
-    for _, row in ipairs(rows) do
+    for i, row in ipairs(rows) do
         local achID = row.id
         local id, name, points, completed, _, _, _, description, _, icon, rewardText, _, wasEarnedByMe =
             GetAchievementInfo(achID)
@@ -1331,8 +1344,8 @@ local function BuildAchievementsTable(parent, instData, yOffset)
             itemRow:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -8, yOffset)
             itemRow:SetHeight(ITEM_ROW_HEIGHT)
             itemRow:SetBackdrop(BACKDROP_SIMPLE)
-            itemRow:SetBackdropColor(OneWoW_GUI:GetThemeColor("BG_PRIMARY"))
-            itemRow:SetBackdropBorderColor(OneWoW_GUI:GetThemeColor("BORDER_SUBTLE"))
+            itemRow._zebraIndex = i
+            PaintDetailItemRow(itemRow, false)
             table.insert(detailElements, itemRow)
 
             local iconFrame = CreateFrame("Frame", nil, itemRow, "BackdropTemplate")
@@ -1411,8 +1424,7 @@ local function BuildAchievementsTable(parent, instData, yOffset)
                 OpenAchievementUI(capturedID)
             end)
             itemRow:SetScript("OnEnter", function(myself)
-                myself:SetBackdropColor(OneWoW_GUI:GetThemeColor("BG_HOVER"))
-                myself:SetBackdropBorderColor(OneWoW_GUI:GetThemeColor("BORDER_FOCUS"))
+                PaintDetailItemRow(myself, true)
                 GameTooltip:SetOwner(myself, "ANCHOR_RIGHT")
                 GameTooltip:SetText(name, 1, 1, 1)
                 local tr, tg, tb = OneWoW_GUI:GetThemeColor(colorKey)
@@ -1427,8 +1439,7 @@ local function BuildAchievementsTable(parent, instData, yOffset)
                 GameTooltip:Show()
             end)
             itemRow:SetScript("OnLeave", function(myself)
-                myself:SetBackdropColor(OneWoW_GUI:GetThemeColor("BG_PRIMARY"))
-                myself:SetBackdropBorderColor(OneWoW_GUI:GetThemeColor("BORDER_SUBTLE"))
+                PaintDetailItemRow(myself, false)
                 GameTooltip:Hide()
             end)
 
@@ -1686,18 +1697,18 @@ RefreshDetailView = function(isSecondRefresh)
 
         if isExpanded and #filteredItems > 0 then
             if encounter.questCategory then
-                for _, item in ipairs(filteredItems) do
-                    yOffset = BuildQuestItemRow(parent, item, yOffset)
+                for i, item in ipairs(filteredItems) do
+                    yOffset = BuildQuestItemRow(parent, item, yOffset, i)
                 end
             else
-            for _, item in ipairs(filteredItems) do
+            for i, item in ipairs(filteredItems) do
                 local itemRow = CreateFrame("Frame", nil, parent, "BackdropTemplate")
                 itemRow:SetPoint("TOPLEFT", parent, "TOPLEFT", 8, yOffset)
                 itemRow:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -8, yOffset)
                 itemRow:SetHeight(ITEM_ROW_HEIGHT)
                 itemRow:SetBackdrop(BACKDROP_SIMPLE)
-                itemRow:SetBackdropColor(OneWoW_GUI:GetThemeColor("BG_PRIMARY"))
-                itemRow:SetBackdropBorderColor(OneWoW_GUI:GetThemeColor("BORDER_SUBTLE"))
+                itemRow._zebraIndex = i
+                PaintDetailItemRow(itemRow, false)
                 table.insert(detailElements, itemRow)
 
                 local iconFrame = CreateFrame("Frame", nil, itemRow, "BackdropTemplate")
@@ -1768,8 +1779,7 @@ RefreshDetailView = function(isSecondRefresh)
 
                 itemRow:EnableMouse(true)
                 itemRow:SetScript("OnEnter", function(self)
-                    self:SetBackdropColor(OneWoW_GUI:GetThemeColor("BG_HOVER"))
-                    self:SetBackdropBorderColor(OneWoW_GUI:GetThemeColor("BORDER_FOCUS"))
+                    PaintDetailItemRow(self, true)
                     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
                     local scaledLink = GetScaledItemLink(item, capturedEncID)
                     if scaledLink then
@@ -1780,8 +1790,7 @@ RefreshDetailView = function(isSecondRefresh)
                     GameTooltip:Show()
                 end)
                 itemRow:SetScript("OnLeave", function(self)
-                    self:SetBackdropColor(OneWoW_GUI:GetThemeColor("BG_PRIMARY"))
-                    self:SetBackdropBorderColor(OneWoW_GUI:GetThemeColor("BORDER_SUBTLE"))
+                    PaintDetailItemRow(self, false)
                     GameTooltip:Hide()
                 end)
 
@@ -2524,7 +2533,9 @@ function ns.UI.CreateJournalTab(parent)
             return
         end
         if button == "RightButton" then
-            ns.Navigation:SaveInstanceEntranceWayPin(instData)
+            if ns.Navigation:IsWayPinsEnabled() then
+                ns.Navigation:SaveInstanceEntranceWayPin(instData)
+            end
             return
         end
         ns.Navigation:OpenInstanceEntrance(instData.instanceID, instData.entrances)

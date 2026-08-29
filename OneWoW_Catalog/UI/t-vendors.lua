@@ -604,7 +604,8 @@ local function ApplyVendorPortrait(row, displayID)
     end
 end
 
-local function BindVendorListRow(row, _, vendor, state)
+local function BindVendorListRow(row, index, vendor, state)
+    row._zebraIndex = index
     row.vendor = vendor
     row._rowSelected = state.selected and true or false
     row._borderKey = ns.CardChrome.VendorBorderKey(vendor)
@@ -849,7 +850,7 @@ local function ShowVendorDetail(panels, vendor)
                 })
                 pinLink:SetPoint("LEFT", infoLine, "RIGHT", 8, 0)
                 tinsert(detailElements, pinLink)
-                if capturedX and capturedX > 0 then
+                if capturedX and capturedX > 0 and ns.Navigation:IsWayPinsEnabled() then
                     local saveLink = OneWoW_GUI:CreateTextLink(parent, {
                         text = L["VENDORS_SAVE_WAYPIN"],
                         fontSize = 11,
@@ -882,7 +883,7 @@ local function ShowVendorDetail(panels, vendor)
                 })
                 pinLink:SetPoint("LEFT", locLine, "RIGHT", 8, 0)
                 tinsert(detailElements, pinLink)
-                if capturedX and capturedX > 0 then
+                if capturedX and capturedX > 0 and ns.Navigation:IsWayPinsEnabled() then
                     local saveLink = OneWoW_GUI:CreateTextLink(parent, {
                         text = L["VENDORS_SAVE_WAYPIN"],
                         fontSize = 11,

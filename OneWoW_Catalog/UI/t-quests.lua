@@ -2363,7 +2363,9 @@ function ShowQuestDetail(panels, questData)
             0
         )
         if pinX and pinY then
-            GameTooltip:AddLine(L["JOURNAL_MAP_PIN_SAVE_TT"], 0.8, 0.8, 0.8, true)
+            if ns.Navigation:IsWayPinsEnabled() then
+                GameTooltip:AddLine(L["JOURNAL_MAP_PIN_SAVE_TT"], 0.8, 0.8, 0.8, true)
+            end
         end
 
         GameTooltip:Show()
@@ -2380,7 +2382,7 @@ function ShowQuestDetail(panels, questData)
     mapBtn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     mapBtn:SetScript("OnClick", function(_, button)
         if button == "RightButton" then
-            if pinX and pinY and ns.Navigation then
+            if pinX and pinY and ns.Navigation and ns.Navigation:IsWayPinsEnabled() then
                 ns.Navigation:SaveOneWayPin(
                     questData.name or (L["QUESTS_QUESTID"] .. " " .. tostring(questID)),
                     displayMapID,
@@ -3508,7 +3510,11 @@ local function UpdateQuestListEntry(btn, entry, state)
         ns.CardChrome.ResolveExpansionBackground(expLevel, "level")
     )
     btn._borderKey = ns.CardChrome.QuestBorderKey(quest)
-    btn._chromeFill = btn.isChild and "QUEST_ROW_CHILD" or "BG_SECONDARY"
+    if btn.isChild then
+        btn._chromeFill = "QUEST_ROW_CHILD"
+    else
+        btn._chromeFill = nil
+    end
     ApplyQuestRowChrome(btn, btn._rowSelected, false)
 end
 
@@ -3715,7 +3721,7 @@ local function CreateQuestListRow(parent, api)
     btn:SetBackdrop(BACKDROP_INNER_NO_INSETS)
     ns.CardChrome.Attach(btn)
     btn._borderKey = "quest.standard"
-    btn._chromeFill = "BG_SECONDARY"
+    btn._chromeFill = nil
     btn._rowSelected = false
     ApplyQuestRowChrome(btn, false, false)
 
@@ -3821,7 +3827,8 @@ local function CreateQuestListRow(parent, api)
     return btn
 end
 
-local function BindQuestListRow(row, _, entry, state)
+local function BindQuestListRow(row, index, entry, state)
+    row._zebraIndex = index
     UpdateQuestListEntry(row, entry, state)
 end
 
