@@ -20,8 +20,9 @@ local DEFAULTS = {
     },
     moneyDisplay = {
         useLetters = false,
+        useGrouping = true,
         useRegionalNumbers = true,
-        useWhiteValues = true,
+        useWhiteValues = false,
     },
     mainFrameSize = {
         width = 1400,
@@ -367,6 +368,7 @@ local DEFAULTS = {
             collections = {
                 enabled = true,
                 recipeAltDisplay = "differentiated",
+                showNonCollectable = false,
             },
             customnotes = { enabled = true },
             enhancements = {

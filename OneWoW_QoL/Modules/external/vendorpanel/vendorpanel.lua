@@ -227,7 +227,7 @@ local function IsAlreadyKnown(itemLink)
         light = true,
     })
     local known = false
-    if status then
+    if status and status.applicable then
         known = status.collected == true
     else
         local _, _, _, _, _, classID = C_Item.GetItemInfoInstant(itemLink)
@@ -368,18 +368,6 @@ function VPFilters.ScanVendor()
             end
         end
     end
-end
-
-function VPFilters.FormatMoney(amount)
-    if amount <= 0 then return "0c" end
-    local gold = math.floor(amount / 10000)
-    local silver = math.floor((amount % 10000) / 100)
-    local copper = amount % 100
-    local formatted = ""
-    if gold > 0 then formatted = formatted .. gold .. "g" end
-    if silver > 0 then formatted = formatted .. (formatted ~= "" and " " or "") .. silver .. "s" end
-    if copper > 0 or formatted == "" then formatted = formatted .. (formatted ~= "" and " " or "") .. copper .. "c" end
-    return formatted
 end
 
 --- C_Item.GetItemInfo for a live bag slot.
@@ -1055,7 +1043,7 @@ function VendorPanel:SellJunkItems()
                 state.activeSellConfirmTicker = nil
             end
             if actualSoldCount > 0 then
-                local moneyStr = VPFilters.FormatMoney(actualGold)
+                local moneyStr = OneWoW.Format.FormatGold(actualGold)
                 local categoryParts = {}
                 if grayCount > 0 then table.insert(categoryParts, grayCount .. " " .. L["VENDOR_SOLD_GRAY"]) end
                 if markedCount > 0 then table.insert(categoryParts, markedCount .. " " .. L["VENDOR_SOLD_MARKED"]) end
@@ -1948,6 +1936,9 @@ function VendorPanelModule:OnEnable()
         GUI:RegisterSettingsCallback("OnThemeChanged", self, onSettingsChanged)
         GUI:RegisterSettingsCallback("OnLanguageChanged", self, onSettingsChanged)
         GUI:RegisterSettingsCallback("OnIconThemeChanged", self, onSettingsChanged)
+        GUI:RegisterSettingsCallback("OnMoneyDisplayChanged", self, function()
+            VendorPanel:UpdatePreviewPanel()
+        end)
     end
 
     if not self._hookDone and MerchantFrame_Update then
