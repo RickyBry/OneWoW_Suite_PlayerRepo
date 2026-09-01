@@ -13,11 +13,11 @@
 - Bundled presets and example lists to get started quickly
 
 ### Auto-Tracking
-- Many step types auto-complete from game events: quests, renown, vault slots, professions, transmog, kills/loot, coordinates, exploration, custom timers, and more. Open-world rares use Kill a Rare or Boss; dungeon and raid bosses use Kill a Dungeon or Raid Boss (fill during the fight or just after).
+- Many step types auto-complete from game events: quests, renown, vault slots, professions, transmog, kills/loot, coordinates, exploration, custom timers, and more. Open-world rares use Kill a Rare or Boss; dungeon and raid bosses use Kill a Dungeon or Raid Boss (fill during the fight or just after). Rare Quest tracks the hidden loot lock: fill from target, search by name, or use the Midnight Zone Rares preset. Click a rare to set a waypoint when spawn coords are known.
 - Daily, weekly, repeating (hour interval), or one-time reset rules; optional account-wide progress
 
 ### Pinned Overlays & Map
-- Pin lists as floating progress windows while you play
+- Pin lists as floating progress windows while you play. Hide pin when done hides the window once every visible step is complete; the list stays pinned and the window comes back after reset. Edit the list to show that pin only for characters in selected Roles.
 - World-map pins for coordinate steps on pinned lists
 
 ### Farm Value
