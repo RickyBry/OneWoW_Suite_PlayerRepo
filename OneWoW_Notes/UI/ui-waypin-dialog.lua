@@ -35,9 +35,84 @@ local previewTimer
 local SchedulePreview
 local LayoutDialog
 local PREVIEW_DELAY = 1
+-- True while OpenWayPinDialog writes seed values. Slider SetValue fires
+-- onChange; that must not treat the seed as a custom-look pick.
+local seeding = false
 
 local function DefaultIcon()
     return { kind = "list", value = "VignetteEvent-SuperTracked" }
+end
+
+local function AsNumber(v)
+    if type(v) == "number" then
+        return v
+    end
+    if type(v) == "string" then
+        return tonumber(v)
+    end
+    return nil
+end
+
+local function IconEquals(a, b)
+    if type(a) ~= "table" or type(b) ~= "table" then
+        return false
+    end
+    return (a.kind or "list") == (b.kind or "list") and a.value == b.value
+end
+
+--- Picking a look on a pack pin means that pin keeps its own look.
+local function MarkCustomLook()
+    if seeding or not fields.packPin or not fields.usePackLook then
+        return
+    end
+    fields.usePackLook = false
+    if fields.usePackLookCb then
+        fields.usePackLookCb:SetChecked(false)
+    end
+    if LayoutDialog then
+        LayoutDialog()
+    end
+end
+
+local function SyncUsePackLook()
+    if fields.usePackLookCb and fields.usePackLookCb:IsShown() then
+        fields.usePackLook = fields.usePackLookCb:GetChecked() and true or false
+    end
+end
+
+local function HonorPickedIcon(look)
+    if not fields.packPin or not fields.usePackLook or not fields.packId or not look then
+        return
+    end
+    local pack = ns.WayPinPacks:GetPack(fields.packId)
+    if not pack then
+        return
+    end
+    local packLook = ns.WayPinPacks:LookForPaint(pack)
+    if not IconEquals(look.icon, packLook.icon) then
+        fields.usePackLook = false
+        if fields.usePackLookCb then
+            fields.usePackLookCb:SetChecked(false)
+        end
+    end
+end
+
+local function ClearEditorFocus()
+    if fields.title then
+        fields.title:ClearFocus()
+    end
+    if fields.description then
+        fields.description:ClearFocus()
+    end
+    if fields.mapID then
+        fields.mapID:ClearFocus()
+    end
+    if fields.x then
+        fields.x:ClearFocus()
+    end
+    if fields.y then
+        fields.y:ClearFocus()
+    end
 end
 
 local function PaintIconCell(btn, spec, selected)
@@ -70,6 +145,7 @@ local function RebuildIconGrid()
                 btn.tex = tex
                 btn:SetScript("OnClick", function(myself)
                     selectedIcon = { kind = "list", value = myself.iconName }
+                    MarkCustomLook()
                     RebuildIconGrid()
                     SchedulePreview()
                 end)
@@ -116,6 +192,7 @@ local function RebuildBgGrid()
             btn.tex = tex
             btn:SetScript("OnClick", function(myself)
                 selectedBg = myself.styleName
+                MarkCustomLook()
                 RebuildBgGrid()
                 SchedulePreview()
             end)
@@ -142,8 +219,8 @@ local function RebuildBgGrid()
     dialog.bgChild:SetHeight(math.max(rows * (BG_CELL + ICON_PAD), 1))
 end
 
-local function ReadNumber(box)
-    return tonumber(box:GetSearchText())
+local function ReadNumber(box, fallback)
+    return AsNumber(box:GetSearchText()) or fallback
 end
 
 local function CancelPreviewTimer()
@@ -154,38 +231,52 @@ local function CancelPreviewTimer()
 end
 
 --- Editor draft only. Does not write SavedVariables.
-local function CollectDraft()
-    local mapID = ReadNumber(fields.mapID)
-    local x = ReadNumber(fields.x)
-    local y = ReadNumber(fields.y)
-    if not mapID or not x or not y then
-        return nil
-    end
+local function CollectLook()
     local icon = selectedIcon or DefaultIcon()
-    local draft = {
-        id          = editingID,
-        title       = fields.title:GetSearchText(),
-        description = fields.description:GetSearchText(),
-        mapID       = mapID,
-        x           = x,
-        y           = y,
+    local look = {
         icon        = { kind = icon.kind or "list", value = icon.value },
         effect      = nil,
         mapSize     = fields.mapSize,
         minimapSize = fields.minimapSize,
-        storage     = fields.storageValue or "account",
-        source      = fields.source or "manual",
-        sourceKey   = fields.sourceKey,
     }
     if bgEnabled and selectedBg then
-        draft.bg = {
+        look.bg = {
             enabled = true,
             style = selectedBg,
             effect = fields.bgEffect or "none",
             scale = tonumber(fields.bgScale) or 1,
         }
     end
-    return draft
+    return look
+end
+
+local function CollectDraft(look)
+    local mapID = ReadNumber(fields.mapID, fields.mapIDValue)
+    local x = ReadNumber(fields.x, fields.xValue)
+    local y = ReadNumber(fields.y, fields.yValue)
+    if not mapID or not x or not y then
+        return nil
+    end
+    look = look or CollectLook()
+    return {
+        id          = editingID,
+        title       = fields.title:GetSearchText(),
+        description = fields.description:GetSearchText(),
+        mapID       = mapID,
+        x           = x,
+        y           = y,
+        icon        = look.icon,
+        bg          = look.bg,
+        effect      = look.effect,
+        mapSize     = look.mapSize,
+        minimapSize = look.minimapSize,
+        storage     = fields.storageValue or "account",
+        source      = fields.source or "manual",
+        sourceKey   = fields.sourceKey,
+        packId      = fields.packId,
+        packPinId   = fields.packPinId,
+        usePackLook = fields.packPin and fields.usePackLook,
+    }
 end
 
 local function ApplyPreviewDraft()
@@ -198,6 +289,17 @@ local function ApplyPreviewDraft()
         ns.WayPinsMap:ClearPreviewDraft()
         return
     end
+    if fields.packPin and fields.usePackLook and fields.packId then
+        local pack = ns.WayPinPacks:GetPack(fields.packId)
+        if pack then
+            local packLook = ns.WayPinPacks:LookForPaint(pack)
+            draft.icon = packLook.icon
+            draft.bg = packLook.bg
+            draft.effect = packLook.effect
+            draft.mapSize = packLook.mapSize
+            draft.minimapSize = packLook.minimapSize
+        end
+    end
     ns.WayPinsMap:SetPreviewDraft(draft)
 end
 
@@ -208,18 +310,48 @@ SchedulePreview = function()
 end
 
 local function SaveFromDialog()
-    local payload = CollectDraft()
+    ClearEditorFocus()
+    local look = CollectLook()
+    SyncUsePackLook()
+    HonorPickedIcon(look)
+    CancelPreviewTimer()
+    ns.WayPinsMap:ClearPreviewDraft()
+    if fields.packLook then
+        if fields.packId then
+            ns.WayPinPacks:SetLook(fields.packId, look)
+        end
+        dialog.frame:Hide()
+        return
+    end
+    local payload = CollectDraft(look)
     if not payload then
         return
     end
-    CancelPreviewTimer()
-    ns.WayPinsMap:ClearPreviewDraft()
     if editingID and ns.WayPins:GetPin(editingID) then
         local existing = ns.WayPins:GetPin(editingID)
         payload.created = existing.created
         payload.source = existing.source or payload.source
         payload.sourceKey = existing.sourceKey or payload.sourceKey
         ns.WayPins:Save(editingID, payload)
+    elseif fields.packPin and fields.packId then
+        local addFields = {
+            title = payload.title,
+            note  = payload.description,
+            mapID = payload.mapID,
+            x     = payload.x,
+            y     = payload.y,
+        }
+        if not payload.usePackLook then
+            addFields.icon        = payload.icon
+            addFields.bg          = payload.bg
+            addFields.effect      = payload.effect
+            addFields.mapSize     = payload.mapSize
+            addFields.minimapSize = payload.minimapSize
+        end
+        local newId = ns.WayPinPacks:AddPin(fields.packId, addFields)
+        if newId then
+            ns.UI.SelectWayPin(newId)
+        end
     else
         ns.WayPins:Add(payload)
     end
@@ -284,18 +416,36 @@ local function EnsureDialog()
 
     fields.mapID = OneWoW_GUI:CreateEditBox(content, {
         width = 90, maxLetters = 8, showClear = false,
-        onTextChanged = function() SchedulePreview() end,
+        onTextChanged = function()
+            local n = AsNumber(fields.mapID:GetSearchText())
+            if n then
+                fields.mapIDValue = n
+            end
+            SchedulePreview()
+        end,
     })
     fields.mapID:SetNumeric(true)
 
     fields.x = OneWoW_GUI:CreateEditBox(content, {
         width = 90, maxLetters = 8, showClear = false,
-        onTextChanged = function() SchedulePreview() end,
+        onTextChanged = function()
+            local n = AsNumber(fields.x:GetSearchText())
+            if n then
+                fields.xValue = n
+            end
+            SchedulePreview()
+        end,
     })
 
     fields.y = OneWoW_GUI:CreateEditBox(content, {
         width = 90, maxLetters = 8, showClear = false,
-        onTextChanged = function() SchedulePreview() end,
+        onTextChanged = function()
+            local n = AsNumber(fields.y:GetSearchText())
+            if n then
+                fields.yValue = n
+            end
+            SchedulePreview()
+        end,
     })
 
     local storeDD = ns.UI.CreateThemedDropdown(content, L["LABEL_STORAGE"], 180, 24)
@@ -325,6 +475,7 @@ local function EnsureDialog()
         fmt = "%.0f",
         onChange = function(val)
             fields.mapSize = val
+            MarkCustomLook()
             SchedulePreview()
         end,
     })
@@ -338,6 +489,7 @@ local function EnsureDialog()
         fmt = "%.0f",
         onChange = function(val)
             fields.minimapSize = val
+            MarkCustomLook()
             SchedulePreview()
         end,
     })
@@ -364,6 +516,17 @@ local function EnsureDialog()
             if not bgEnabled then
                 fields.effectDD:ClosePopup()
             end
+            MarkCustomLook()
+            LayoutDialog()
+            SchedulePreview()
+        end,
+    })
+
+    fields.usePackLookCb = OneWoW_GUI:CreateCheckbox(content, {
+        label = L["WAYPINS_USE_PACK_LOOK"],
+        checked = true,
+        onClick = function(myself)
+            fields.usePackLook = myself:GetChecked() and true or false
             LayoutDialog()
             SchedulePreview()
         end,
@@ -378,6 +541,7 @@ local function EnsureDialog()
     })
     fields.effectDD.onSelect = function(value)
         fields.bgEffect = value
+        MarkCustomLook()
         SchedulePreview()
     end
 
@@ -398,6 +562,7 @@ local function EnsureDialog()
         fmt = "%.1f",
         onChange = function(val)
             fields.bgScale = val
+            MarkCustomLook()
             SchedulePreview()
         end,
     })
@@ -408,63 +573,106 @@ local function EnsureDialog()
         CancelPreviewTimer()
         ns.WayPinsMap:ClearPreviewDraft()
         if editingID then
-            ns.WayPins:Remove(editingID)
+            local pin = ns.WayPins:GetPin(editingID)
+            if pin and ns.WayPinPacks:IsPackPinId(editingID) then
+                ns.WayPinsMap:ConfirmReturnFromPack(pin)
+            else
+                ns.WayPins:Remove(editingID)
+            end
         end
         dialog.frame:Hide()
     end)
 
     LayoutDialog = function()
         local y = -10
-        Place(fields.nameLabel, DIALOG_PAD, y)
-        y = y - 16
+        local packLook = fields.packLook
+        local packPin = fields.packPin
+        local showIdentity = not packLook
+        local showVisuals = true
 
-        PlaceWide(fields.title, y)
-        y = y - 30
+        fields.nameLabel:SetShown(showIdentity)
+        fields.title:SetShown(showIdentity)
+        fields.descLabel:SetShown(showIdentity)
+        fields.description:SetShown(showIdentity)
+        fields.coordLabel:SetShown(showIdentity)
+        fields.mapID:SetShown(showIdentity)
+        fields.x:SetShown(showIdentity)
+        fields.y:SetShown(showIdentity)
+        fields.storageDD:SetShown(showIdentity and not packPin)
+        fields.usePackLookCb:SetShown(packPin)
+        fields.worldSizeLabel:SetShown(showVisuals)
+        fields.miniSizeLabel:SetShown(showVisuals)
+        fields.sizeSlider:SetShown(showVisuals)
+        fields.minimapSizeSlider:SetShown(showVisuals)
+        fields.warn:SetShown(showVisuals)
+        fields.iconLabel:SetShown(showVisuals)
+        dialog.iconScroll:SetShown(showVisuals)
+        fields.bgCheck:SetShown(showVisuals)
 
-        Place(fields.descLabel, DIALOG_PAD, y)
-        y = y - 16
+        if showIdentity then
+            Place(fields.nameLabel, DIALOG_PAD, y)
+            y = y - 16
 
-        PlaceWide(fields.description, y)
-        y = y - 30
+            PlaceWide(fields.title, y)
+            y = y - 30
 
-        Place(fields.coordLabel, DIALOG_PAD, y)
-        y = y - 16
+            Place(fields.descLabel, DIALOG_PAD, y)
+            y = y - 16
 
-        Place(fields.mapID, DIALOG_PAD, y)
-        fields.x:ClearAllPoints()
-        fields.x:SetPoint("LEFT", fields.mapID, "RIGHT", 8, 0)
-        fields.y:ClearAllPoints()
-        fields.y:SetPoint("LEFT", fields.x, "RIGHT", 8, 0)
-        y = y - 30
+            PlaceWide(fields.description, y)
+            y = y - 30
 
-        Place(fields.storageDD, DIALOG_PAD, y)
-        y = y - 28
+            Place(fields.coordLabel, DIALOG_PAD, y)
+            y = y - 16
 
-        Place(fields.worldSizeLabel, DIALOG_PAD, y)
-        Place(fields.miniSizeLabel, 240, y)
-        y = y - 16
+            Place(fields.mapID, DIALOG_PAD, y)
+            fields.x:ClearAllPoints()
+            fields.x:SetPoint("LEFT", fields.mapID, "RIGHT", 8, 0)
+            fields.y:ClearAllPoints()
+            fields.y:SetPoint("LEFT", fields.x, "RIGHT", 8, 0)
+            y = y - 30
 
-        Place(fields.sizeSlider, DIALOG_PAD, y)
-        Place(fields.minimapSizeSlider, 240, y)
-        y = y - 40
+            if packPin then
+                Place(fields.usePackLookCb, 10, y)
+                y = y - 28
+            else
+                Place(fields.storageDD, DIALOG_PAD, y)
+                y = y - 28
+            end
+        end
 
-        PlaceWide(fields.warn, y)
-        fields.warn:SetWidth(DIALOG_WIDTH - DIALOG_PAD * 2)
-        y = y - math.max(fields.warn:GetStringHeight(), 16) - 8
+        if showVisuals then
+            Place(fields.worldSizeLabel, DIALOG_PAD, y)
+            Place(fields.miniSizeLabel, 240, y)
+            y = y - 16
 
-        Place(fields.iconLabel, DIALOG_PAD, y)
-        y = y - 18
+            Place(fields.sizeSlider, DIALOG_PAD, y)
+            Place(fields.minimapSizeSlider, 240, y)
+            y = y - 40
 
-        dialog.iconScroll:ClearAllPoints()
-        dialog.iconScroll:SetPoint("TOPLEFT", content, "TOPLEFT", DIALOG_PAD, y)
-        dialog.iconScroll:SetPoint("TOPRIGHT", content, "TOPRIGHT", -DIALOG_PAD, y)
-        dialog.iconScroll:SetHeight(ICON_SCROLL_H)
-        y = y - ICON_SCROLL_H - 8
+            PlaceWide(fields.warn, y)
+            fields.warn:SetWidth(DIALOG_WIDTH - DIALOG_PAD * 2)
+            y = y - math.max(fields.warn:GetStringHeight(), 16) - 8
 
-        Place(fields.bgCheck, 10, y)
-        y = y - 26
+            Place(fields.iconLabel, DIALOG_PAD, y)
+            y = y - 18
 
-        local showBg = bgEnabled
+            dialog.iconScroll:ClearAllPoints()
+            dialog.iconScroll:SetPoint("TOPLEFT", content, "TOPLEFT", DIALOG_PAD, y)
+            dialog.iconScroll:SetPoint("TOPRIGHT", content, "TOPRIGHT", -DIALOG_PAD, y)
+            dialog.iconScroll:SetHeight(ICON_SCROLL_H)
+            y = y - ICON_SCROLL_H - 8
+
+            Place(fields.bgCheck, 10, y)
+            y = y - 26
+        else
+            fields.effectDD:Hide()
+            dialog.bgScroll:Hide()
+            fields.bgScaleLabel:Hide()
+            fields.bgScaleSlider:Hide()
+        end
+
+        local showBg = showVisuals and bgEnabled
         fields.effectDD:SetShown(showBg)
         dialog.bgScroll:SetShown(showBg)
         fields.bgScaleLabel:SetShown(showBg)
@@ -522,7 +730,13 @@ function ns.UI.OpenWayPinDialog(seed)
     CancelPreviewTimer()
     ns.WayPinsMap:ClearPreviewDraft()
     seed = seed or {}
-    editingID = seed.id
+    seeding = true
+    editingID = seed.packLook and nil or seed.id
+    fields.packLook = seed.packLook == true
+    fields.packPin = seed.packId ~= nil and not fields.packLook
+    fields.packId = seed.packId
+    fields.packPinId = seed.packPinId
+    fields.usePackLook = fields.packPin and seed.usePackLook ~= false
     fields.source = seed.source
     fields.sourceKey = seed.sourceKey
     fields.storageValue = seed.storage == "character" and "character" or "account"
@@ -535,6 +749,9 @@ function ns.UI.OpenWayPinDialog(seed)
     selectedBg = (seed.bg and seed.bg.style) or "Solid-Circle"
     fields.mapSize = seed.mapSize or ns.WayPinsVisual.WorldDefault()
     fields.minimapSize = seed.minimapSize or ns.WayPinsVisual.MinimapDefault()
+    fields.mapIDValue = AsNumber(seed.mapID)
+    fields.xValue = AsNumber(seed.x)
+    fields.yValue = AsNumber(seed.y)
     local effect = (seed.bg and seed.bg.effect) or seed.effect or "none"
     if effect ~= "spinning" and effect ~= "zooming" and effect ~= "both" then
         effect = "none"
@@ -544,17 +761,27 @@ function ns.UI.OpenWayPinDialog(seed)
 
     fields.title:SetText(seed.title or "")
     fields.description:SetText(seed.description or "")
-    fields.mapID:SetText(seed.mapID and tostring(seed.mapID) or "")
-    fields.x:SetText(seed.x and string.format("%.2f", seed.x) or "")
-    fields.y:SetText(seed.y and string.format("%.2f", seed.y) or "")
+    fields.mapID:SetText(fields.mapIDValue and tostring(fields.mapIDValue) or "")
+    fields.x:SetText(fields.xValue and string.format("%.2f", fields.xValue) or "")
+    fields.y:SetText(fields.yValue and string.format("%.2f", fields.yValue) or "")
     fields.sizeSlider.slider:SetValue(fields.mapSize)
     fields.minimapSizeSlider.slider:SetValue(fields.minimapSize)
     fields.bgScaleSlider.slider:SetValue(fields.bgScale)
     fields.effectDD:SetSelected(fields.bgEffect)
     fields.bgCheck:SetChecked(bgEnabled)
+    fields.usePackLookCb:SetChecked(fields.usePackLook)
+    seeding = false
 
-    if editingID then
+    if fields.packLook then
+        fields.deleteBtn:Hide()
+        dialog.titleBar._titleText:SetText(L["WAYPINS_PACK_LOOK"])
+    elseif editingID then
         fields.deleteBtn:Show()
+        if fields.packPin then
+            fields.deleteBtn:SetFitText(L["WAYPINS_REMOVE_FROM_PACK"])
+        else
+            fields.deleteBtn:SetFitText(DELETE)
+        end
         dialog.titleBar._titleText:SetText(L["WAYPINS_DIALOG_EDIT"])
     else
         fields.deleteBtn:Hide()
