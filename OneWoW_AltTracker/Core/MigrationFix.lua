@@ -3,6 +3,8 @@ local _, ns = ...
 local OneWoW_GUI = OneWoW_GUI
 local DB = OneWoW_GUI.DB
 
+local type = type
+
 ns.MigrationFix = {}
 local MigrationFix = ns.MigrationFix
 
@@ -12,12 +14,8 @@ function MigrationFix:ConsolidateCrossReferenceCharKeys()
     local total = 0
     total = total + DB:ConsolidateCharacterKeys(ns.db.global.favorites)
 
-    if OneWoW_CatalogData_Quests_DB then
-        total = total + DB:ConsolidateCharacterKeys(OneWoW_CatalogData_Quests_DB.completion)
-    end
-
-    if OneWoW_CatalogData_Tradeskills_DB then
-        total = total + DB:ConsolidateCharacterKeys(OneWoW_CatalogData_Tradeskills_DB.scanCache)
+    if OneWoW_CatDB_QuestDBCurrent_DB and type(OneWoW_CatDB_QuestDBCurrent_DB.global) == "table" then
+        total = total + DB:ConsolidateCharacterKeys(OneWoW_CatDB_QuestDBCurrent_DB.global.completion)
     end
 
     if total > 0 then

@@ -40,11 +40,12 @@ jobs:
             OneWoW_AltTracker_Storage
             OneWoW_Bags
             OneWoW_Catalog
-            OneWoW_CatalogData_Journal
-            OneWoW_CatalogData_Quests
-            OneWoW_CatalogData_Quests_Archive
-            OneWoW_CatalogData_Tradeskills
-            OneWoW_CatalogData_Vendors
+            OneWoW_CatDB_ItemDB
+            OneWoW_CatDB_NPCDB
+            OneWoW_CatDB_QuestDBArchive
+            OneWoW_CatDB_QuestDBCurrent
+            OneWoW_CatDB_TradeSkillDB
+            OneWoW_CatDB_ZoneDB
             OneWoW_DirectDeposit
             OneWoW_Mail
             OneWoW_Notes
@@ -68,11 +69,12 @@ jobs:
             OneWoW_AltTracker_Storage
             OneWoW_Bags
             OneWoW_Catalog
-            OneWoW_CatalogData_Journal
-            OneWoW_CatalogData_Quests
-            OneWoW_CatalogData_Quests_Archive
-            OneWoW_CatalogData_Tradeskills
-            OneWoW_CatalogData_Vendors
+            OneWoW_CatDB_ItemDB
+            OneWoW_CatDB_NPCDB
+            OneWoW_CatDB_QuestDBArchive
+            OneWoW_CatDB_QuestDBCurrent
+            OneWoW_CatDB_TradeSkillDB
+            OneWoW_CatDB_ZoneDB
             OneWoW_DirectDeposit
             OneWoW_Mail
             OneWoW_Notes
@@ -81,10 +83,20 @@ jobs:
             OneWoW_Trackers
             OneWoW_Utility_DevTool
           )
+          stale=(
+            OneWoW_CatalogData_Journal
+            OneWoW_CatalogData_Quests
+            OneWoW_CatalogData_Quests_Archive
+            OneWoW_CatalogData_Tradeskills
+            OneWoW_CatalogData_Vendors
+          )
           for d in "${folders[@]}"; do
             test -d ".suite-src/$d"
             rm -rf "$d"
             cp -a ".suite-src/$d" "$d"
+          done
+          for d in "${stale[@]}"; do
+            rm -rf "$d"
           done
           rm -rf .suite-src
 
@@ -105,6 +117,12 @@ jobs:
             OneWoW_AltTracker_Storage \
             OneWoW_Bags \
             OneWoW_Catalog \
+            OneWoW_CatDB_ItemDB \
+            OneWoW_CatDB_NPCDB \
+            OneWoW_CatDB_QuestDBArchive \
+            OneWoW_CatDB_QuestDBCurrent \
+            OneWoW_CatDB_TradeSkillDB \
+            OneWoW_CatDB_ZoneDB \
             OneWoW_CatalogData_Journal \
             OneWoW_CatalogData_Quests \
             OneWoW_CatalogData_Quests_Archive \
