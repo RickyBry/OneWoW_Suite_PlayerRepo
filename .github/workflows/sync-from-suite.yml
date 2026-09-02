@@ -123,11 +123,6 @@ jobs:
             OneWoW_CatDB_QuestDBCurrent \
             OneWoW_CatDB_TradeSkillDB \
             OneWoW_CatDB_ZoneDB \
-            OneWoW_CatalogData_Journal \
-            OneWoW_CatalogData_Quests \
-            OneWoW_CatalogData_Quests_Archive \
-            OneWoW_CatalogData_Tradeskills \
-            OneWoW_CatalogData_Vendors \
             OneWoW_DirectDeposit \
             OneWoW_Mail \
             OneWoW_Notes \
@@ -135,6 +130,12 @@ jobs:
             OneWoW_ShoppingList \
             OneWoW_Trackers \
             OneWoW_Utility_DevTool
+          git rm -rf --ignore-unmatch -- \
+            OneWoW_CatalogData_Journal \
+            OneWoW_CatalogData_Quests \
+            OneWoW_CatalogData_Quests_Archive \
+            OneWoW_CatalogData_Tradeskills \
+            OneWoW_CatalogData_Vendors
           if git diff --cached --quiet; then
             echo "No addon changes"
             exit 0
