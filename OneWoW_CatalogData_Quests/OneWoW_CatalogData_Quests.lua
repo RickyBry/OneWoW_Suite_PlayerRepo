@@ -1,4 +1,0 @@
--- OneWoW_CatalogData_Quests main file.
--- The public cross-addon API is published in Core/API.lua as the global
--- OneWoW_CatalogData_Quests_API. This unit exposes no other globals; the addon
--- namespace (ns) stays private to the unit.
