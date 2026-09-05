@@ -13,6 +13,14 @@ function PortalHub:Initialize()
 end
 
 function PortalHub:InitializeDatabase()
+	local ph = OneWoW:GetPortalHub()
+	if ph.hearthstoneChoiceMigrated then
+		return
+	end
+	if ph.randomHearthstone == false then
+		ph.hearthstoneChoice = "default"
+	end
+	ph.hearthstoneChoiceMigrated = true
 end
 
 local function CategorizePortal(portalData)
@@ -51,7 +59,7 @@ local function CategorizePortal(portalData)
 	if portalData.type == "toy" then
 		local professionToys = {
 			18984, 18986, 30542, 30544, 48933, 87215, 112059, 151652, 168807, 168808,
-			168807, 251662, 412555, 212337, 198156, 221966, 248485
+			172924, 212337, 198156, 221966, 248485
 		}
 		for _, toyID in ipairs(professionToys) do
 			if portalData.id == toyID then
@@ -364,16 +372,27 @@ function PortalHub:GetPortalsForCategory(categoryID, showAll)
 		end
 		return portals
 	elseif categoryID == "abilities" then
+		local ph = OneWoW:GetPortalHub()
 		local allAbilities = {}
-		local mageT = ns.PortalHubDetection:GetMageTeleports(showAll)
-		local mageP = ns.PortalHubDetection:GetMagePortals(showAll)
+		if ph.showMageTeleports then
+			local mageT = ns.PortalHubDetection:GetMageTeleports(showAll)
+			if #mageT > 0 then
+				table.insert(allAbilities, {type = "header", name = L["PORTAL_MAGE_TELEPORTS"]})
+				for _, p in ipairs(mageT) do table.insert(allAbilities, p) end
+			end
+		end
+		if ph.showMagePortals then
+			local mageP = ns.PortalHubDetection:GetMagePortals(showAll)
+			if #mageP > 0 then
+				table.insert(allAbilities, {type = "header", name = L["PORTAL_MAGE_PORTALS"]})
+				for _, p in ipairs(mageP) do table.insert(allAbilities, p) end
+			end
+		end
 		local druid = ns.PortalHubDetection:GetDruidPortals(showAll)
 		local dk = ns.PortalHubDetection:GetDeathKnightPortals(showAll)
 		local monk = ns.PortalHubDetection:GetMonkPortals(showAll)
 		local shaman = ns.PortalHubDetection:GetShamanPortals(showAll)
 		local racial = ns.PortalHubDetection:GetRacePortals(showAll)
-		for _, p in ipairs(mageT) do table.insert(allAbilities, p) end
-		for _, p in ipairs(mageP) do table.insert(allAbilities, p) end
 		for _, p in ipairs(druid) do table.insert(allAbilities, p) end
 		for _, p in ipairs(dk) do table.insert(allAbilities, p) end
 		for _, p in ipairs(monk) do table.insert(allAbilities, p) end

@@ -16,6 +16,7 @@ local instanceStatsFrame = nil
 local lastAutoUpdatedInstance = nil
 local autoUpdateRegistered = false
 local iconSizeSlider = nil
+local iconFontSlider = nil
 local rebuildingStrip = false
 local ESC_ICON_SLIDER_WIDTH = 120
 
@@ -38,6 +39,9 @@ local function RecycleStripButtons()
 end
 
 function EscMenu:Initialize()
+	-- GameMenu OnShow reads portalHub.escEnabled. Keep it aligned with the
+	-- Features module toggle so a prior disable still hides the strips.
+	OneWoW:GetPortalHub().escEnabled = ns.ModuleRegistry:IsEnabled("escpanel")
 	self:HookGameMenu()
 	self:RegisterAutoUpdateEvents()
 end
@@ -154,6 +158,9 @@ end
 
 function EscMenu:HidePortalFrames()
 	if iconSizeSlider and GameTooltip:GetOwner() == iconSizeSlider then
+		GameTooltip:Hide()
+	end
+	if iconFontSlider and GameTooltip:GetOwner() == iconFontSlider then
 		GameTooltip:Hide()
 	end
 	if ns.PortalHubFlyouts then
@@ -283,6 +290,59 @@ function EscMenu:PlaceIconSizeSlider(parent, yOffset, growLeft)
 	return iconSizeSlider:GetHeight()
 end
 
+function EscMenu:PlaceIconFontSlider(parent, yOffset, growLeft)
+	local ph = OneWoW:GetPortalHub()
+	local size = ph.escIconFontSize
+
+	if not iconFontSlider or iconFontSlider:GetParent() ~= parent then
+		if iconFontSlider then
+			iconFontSlider:Hide()
+			iconFontSlider:SetParent(nil)
+			iconFontSlider = nil
+		end
+		iconFontSlider = OneWoW_GUI:CreateSlider(parent, {
+			width = ESC_ICON_SLIDER_WIDTH,
+			minVal = 8,
+			maxVal = 18,
+			step = 1,
+			currentVal = size,
+			fmt = "%d",
+			onChange = function(val)
+				local hub = OneWoW:GetPortalHub()
+				if not hub or hub.escIconFontSize == val or rebuildingStrip then
+					return
+				end
+				hub.escIconFontSize = val
+				EscMenu:ReloadStripPreservingSlider()
+			end,
+		})
+		local sl = iconFontSlider.slider
+		OneWoW_GUI:ConfigureOptionsSliderEnds(sl, "", "")
+		if sl.Low then sl.Low:Hide() end
+		if sl.High then sl.High:Hide() end
+		iconFontSlider:SetScript("OnEnter", function(myself)
+			GameTooltip:SetOwner(myself, "ANCHOR_RIGHT")
+			GameTooltip:SetText(L["PORTAL_ESC_ICON_FONT_SIZE"], 1, 1, 1)
+			GameTooltip:AddLine(L["PORTAL_ESC_ICON_FONT_SIZE_DESC"], nil, nil, nil, true)
+			GameTooltip:Show()
+		end)
+		iconFontSlider:SetScript("OnLeave", function()
+			GameTooltip:Hide()
+		end)
+	elseif iconFontSlider.slider:GetValue() ~= size then
+		iconFontSlider.slider:SetValue(size)
+	end
+
+	iconFontSlider:ClearAllPoints()
+	if growLeft then
+		iconFontSlider:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, yOffset)
+	else
+		iconFontSlider:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, yOffset)
+	end
+	iconFontSlider:Show()
+	return iconFontSlider:GetHeight()
+end
+
 function EscMenu:ReloadStripPreservingSlider()
 	if not GameMenuFrame or not GameMenuFrame:IsShown() then return end
 	if OneWoW.Restriction.IsProtectedActionBlocked() then return end
@@ -307,6 +367,7 @@ function EscMenu:BuildPortalStrip(parent, iconSize, iconGap, growLeft)
 	local ph = OneWoW:GetPortalHub()
 	if not ph or not ph.escPortalsEnabled then
 		if iconSizeSlider then iconSizeSlider:Hide() end
+		if iconFontSlider then iconFontSlider:Hide() end
 		return
 	end
 	-- Class, profession, mage, and item flyouts stay known-only.
@@ -323,8 +384,18 @@ function EscMenu:BuildPortalStrip(parent, iconSize, iconGap, growLeft)
 	if showTopRow then
 		local hearthButtons = {}
 		if ph.showHearthstone ~= false then
-			local hsType = ph.randomHearthstone and "randomhearth" or "item"
-			table.insert(hearthButtons, {type = hsType, id = 6948})
+			local choice = ns.PortalHubDetection:GetHearthstoneChoice()
+			if choice == "none" then
+				-- skip ESC hearth button
+			elseif choice == "disabled" then
+				table.insert(hearthButtons, {type = "hearthdisabled", id = 6948})
+			elseif choice == "random" then
+				table.insert(hearthButtons, {type = "randomhearth", id = 6948})
+			elseif choice == "default" then
+				table.insert(hearthButtons, {type = "item", id = 6948})
+			else
+				table.insert(hearthButtons, {type = "toy", id = choice})
+			end
 		end
 		if ph.showDalaranHearth ~= false then
 			if PlayerHasToy(140192) and C_QuestLog.IsQuestFlaggedCompleted(44663) then
@@ -393,7 +464,7 @@ function EscMenu:BuildPortalStrip(parent, iconSize, iconGap, growLeft)
 
 	if #allAbilities > 0 then
 		local button = ns.PortalHubFlyouts:CreateFlyoutParentButton(
-			parent, "Interface\\Icons\\Achievement_BG_winAB_underXminutes", iconSize, 0, yOffset, allAbilities, flyoutOrient, "Abilities", growLeft
+			parent, "Interface\\Icons\\Achievement_BG_winAB_underXminutes", iconSize, 0, yOffset, allAbilities, flyoutOrient, "Abil", growLeft
 		)
 		table.insert(flyoutButtons, button)
 		yOffset = yOffset - (iconSize + iconGap)
@@ -416,24 +487,35 @@ function EscMenu:BuildPortalStrip(parent, iconSize, iconGap, growLeft)
 		yOffset = yOffset - (iconSize + iconGap)
 	end
 
-	local mageT = ns.PortalHubDetection:GetMageTeleports(showAll)
-	local mageP = ns.PortalHubDetection:GetMagePortals(showAll)
-	local allMage = {}
-	for _, t in ipairs(mageT) do table.insert(allMage, t) end
-	for _, p in ipairs(mageP) do table.insert(allMage, p) end
-	if #allMage > 0 then
-		local icon = C_Spell.GetSpellTexture(3561) or 237509
-		local button = ns.PortalHubFlyouts:CreateFlyoutParentButton(
-			parent, icon, iconSize, 0, yOffset, allMage, flyoutOrient, "Mage", growLeft
-		)
-		table.insert(flyoutButtons, button)
-		yOffset = yOffset - (iconSize + iconGap)
+	if ph.showMageTeleports then
+		local mageT = ns.PortalHubDetection:GetMageTeleports(showAll)
+		if #mageT > 0 then
+			local icon = C_Spell.GetSpellTexture(mageT[1].id) or C_Spell.GetSpellTexture(3561) or 237509
+			local button = ns.PortalHubFlyouts:CreateFlyoutParentButton(
+				parent, icon, iconSize, 0, yOffset, mageT, flyoutOrient, L["PORTAL_ESC_MAGE_TELEPORT"], growLeft
+			)
+			table.insert(flyoutButtons, button)
+			yOffset = yOffset - (iconSize + iconGap)
+		end
+	end
+	if ph.showMagePortals then
+		local mageP = ns.PortalHubDetection:GetMagePortals(showAll)
+		if #mageP > 0 then
+			local icon = C_Spell.GetSpellTexture(mageP[1].id) or C_Spell.GetSpellTexture(10059) or 237509
+			local button = ns.PortalHubFlyouts:CreateFlyoutParentButton(
+				parent, icon, iconSize, 0, yOffset, mageP, flyoutOrient, L["PORTAL_ESC_MAGE_PORTAL"], growLeft
+			)
+			table.insert(flyoutButtons, button)
+			yOffset = yOffset - (iconSize + iconGap)
+		end
 	end
 
 	yOffset = yOffset - (iconSize + iconGap)
 
 	if ns.NestedFlyouts then
 		local midIcon = C_Spell.GetSpellTexture(1254400) or C_Spell.GetSpellTexture(1254572) or 5872031
+		local currentExp = ns.PortalHubDetection:GetCurrentPathExpansion()
+		local seasonalOnly = ns.PortalHubDetection:IsSeasonalOnly()
 		local dungeonExpansions = {
 			{id = "mid", label = "MID", icon = midIcon, portals = ns.PortalHubDetection:GetDungeonPortals("mid", showUnknown)},
 			{id = "tww", label = "TWW", icon = 5872031, portals = ns.PortalHubDetection:GetDungeonPortals("tww", showUnknown)},
@@ -445,6 +527,15 @@ function EscMenu:BuildPortalStrip(parent, iconSize, iconGap, growLeft)
 			{id = "mop", label = "MoP", icon = 328269, portals = ns.PortalHubDetection:GetDungeonPortals("mop", showUnknown)},
 			{id = "cata", label = "CAT", icon = 574788, portals = ns.PortalHubDetection:GetDungeonPortals("cata", showUnknown)},
 		}
+		if seasonalOnly then
+			local filtered = {}
+			for _, exp in ipairs(dungeonExpansions) do
+				if exp.id == currentExp then
+					table.insert(filtered, exp)
+				end
+			end
+			dungeonExpansions = filtered
+		end
 
 		local hasDungeons = false
 		for _, exp in ipairs(dungeonExpansions) do
@@ -471,6 +562,15 @@ function EscMenu:BuildPortalStrip(parent, iconSize, iconGap, growLeft)
 			{id = "mop", label = "MoP", icon = 328269, portals = ns.PortalHubDetection:GetRaidPortals("mop", showUnknown)},
 			{id = "cata", label = "CAT", icon = 574788, portals = ns.PortalHubDetection:GetRaidPortals("cata", showUnknown)},
 		}
+		if seasonalOnly then
+			local filtered = {}
+			for _, exp in ipairs(raidExpansions) do
+				if exp.id == currentExp then
+					table.insert(filtered, exp)
+				end
+			end
+			raidExpansions = filtered
+		end
 
 		local hasRaids = false
 		for _, exp in ipairs(raidExpansions) do
@@ -513,7 +613,7 @@ function EscMenu:BuildPortalStrip(parent, iconSize, iconGap, growLeft)
 		local allItems = ns.PortalHubItems:GetAllItems(false, true)
 		if #allItems > 0 then
 			local button = ns.PortalHubFlyouts:CreateFlyoutParentButton(
-				parent, "Interface\\Icons\\INV_Misc_Bag_10", iconSize, 0, yOffset, allItems, flyoutOrient, "Items", growLeft
+				parent, "Interface\\Icons\\INV_Misc_Bag_10", iconSize, 0, yOffset, allItems, flyoutOrient, "Item", growLeft
 			)
 			table.insert(flyoutButtons, button)
 			yOffset = yOffset - (iconSize + iconGap)
@@ -525,7 +625,8 @@ function EscMenu:BuildPortalStrip(parent, iconSize, iconGap, growLeft)
 	local openButton = self:CreateOpenHubButton(parent, 0, yOffset, iconSize, growLeft)
 	table.insert(secureButtons, openButton)
 	yOffset = yOffset - (iconSize + iconGap)
-	self:PlaceIconSizeSlider(parent, yOffset, growLeft)
+	local sizeH = self:PlaceIconSizeSlider(parent, yOffset, growLeft)
+	self:PlaceIconFontSlider(parent, yOffset - sizeH - 8, growLeft)
 end
 
 function EscMenu:CreatePortalButton(parent, portalData, xOffset, yOffset, iconSize, growLeft)
@@ -552,9 +653,16 @@ function EscMenu:CreatePortalButton(parent, portalData, xOffset, yOffset, iconSi
 	button:RegisterForClicks("AnyDown", "AnyUp")
 	button:SetAttribute("useOnKeyDown", true)
 
-	if portalData.type == "randomhearth" then
+	if portalData.type == "hearthdisabled" then
+		button:SetAttribute("type", nil)
+		button:SetAlpha(0.5)
+		local item = Item:CreateFromItemID(6948)
+		item:ContinueOnItemLoad(function()
+			local icon = item:GetItemIcon()
+			if icon then button.icon:SetTexture(icon) end
+		end)
+	elseif portalData.type == "randomhearth" then
 		local hasHearthstoneItem = C_Item.GetItemCount(6948) > 0
-		local randomEnabled = OneWoW:GetPortalHub().randomHearthstone
 		local hearthstones = ns.PortalData_Hearthstones and ns.PortalData_Hearthstones.List or {}
 		local availableToys = {}
 
@@ -568,34 +676,21 @@ function EscMenu:CreatePortalButton(parent, portalData, xOffset, yOffset, iconSi
 			end
 		end
 
-		if randomEnabled then
-			local available = {}
-			if hasHearthstoneItem then table.insert(available, 6948) end
-			for _, toyID in ipairs(availableToys) do table.insert(available, toyID) end
+		local available = {}
+		if hasHearthstoneItem then table.insert(available, 6948) end
+		for _, toyID in ipairs(availableToys) do table.insert(available, toyID) end
 
-			if #available == 0 then
-				button:SetAttribute("type", "macro")
-				button:SetAttribute("macrotext", "/run print('|cFF00FF00OneWoW:|r No hearthstones available!')")
-			else
-				local selectedID = available[math.random(1, #available)]
-				if selectedID == 6948 then
-					button:SetAttribute("type", "item")
-					button:SetAttribute("item", "item:6948")
-				else
-					button:SetAttribute("type", "toy")
-					button:SetAttribute("toy", selectedID)
-				end
-			end
+		if #available == 0 then
+			button:SetAttribute("type", "macro")
+			button:SetAttribute("macrotext", "/run print('|cFF00FF00OneWoW:|r No hearthstones available!')")
 		else
-			if hasHearthstoneItem then
+			local selectedID = available[math.random(1, #available)]
+			if selectedID == 6948 then
 				button:SetAttribute("type", "item")
 				button:SetAttribute("item", "item:6948")
-			elseif #availableToys > 0 then
-				button:SetAttribute("type", "toy")
-				button:SetAttribute("toy", availableToys[math.random(1, #availableToys)])
 			else
-				button:SetAttribute("type", "macro")
-				button:SetAttribute("macrotext", "/run print('|cFF00FF00OneWoW:|r No hearthstones available!')")
+				button:SetAttribute("type", "toy")
+				button:SetAttribute("toy", selectedID)
 			end
 		end
 
@@ -641,12 +736,15 @@ function EscMenu:CreatePortalButton(parent, portalData, xOffset, yOffset, iconSi
 		button:SetAttribute("spell", portalData.id)
 		local icon = C_Spell.GetSpellTexture(portalData.id)
 		if icon then button.icon:SetTexture(icon) end
-		if ns.PortalData and ns.PortalData:GetShortName(portalData.id) then
-			button.text:SetText(ns.PortalData:GetShortName(portalData.id))
-		end
 	elseif portalData.type == "housing" then
 		ns.PortalHubDetection:ApplyHousingTeleportAttributes(button)
 	end
+
+	local label
+	if portalData.type == "spell" then
+		label = ns.PortalData:GetShortName(portalData.id)
+	end
+	ns.PortalHubFlyouts:ApplyIconLabel(button.text, label)
 
 	button:SetScript("PostClick", function(_, mouseButton)
 		if mouseButton == "LeftButton" then
@@ -663,7 +761,10 @@ function EscMenu:CreatePortalButton(parent, portalData, xOffset, yOffset, iconSi
 
 	button:SetScript("OnEnter", function(myself)
 		GameTooltip:SetOwner(myself, growLeft and "ANCHOR_LEFT" or "ANCHOR_RIGHT")
-		if portalData.type == "randomhearth" or portalData.type == "item" then
+		if portalData.type == "hearthdisabled" then
+			GameTooltip:SetText(L["FEATURE_DISABLED"], 1, 1, 1)
+			GameTooltip:AddLine(L["PORTAL_HEARTHSTONE_CHOICE_DESC"], 0.8, 0.8, 0.8, true)
+		elseif portalData.type == "randomhearth" or portalData.type == "item" then
 			GameTooltip:SetItemByID(portalData.id)
 		elseif portalData.type == "toy" then
 			GameTooltip:SetToyByItemID(portalData.id)

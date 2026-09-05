@@ -369,10 +369,13 @@ local function IDInList(list, id)
 end
 
 local function SafeDisplayText(text)
-    if not text or text == "" then
+    if not text then
         return nil
     end
     if OneWoW.Restriction.IsSecret(text) then
+        return nil
+    end
+    if text == "" then
         return nil
     end
     return text
@@ -476,13 +479,44 @@ local function OpenNPCQuest(questID)
     end
 end
 
+local function InstancePlaceKey(vendor)
+    local keys = vendor and vendor.placeKeys
+    if not keys then
+        return nil
+    end
+    for i = 1, #keys do
+        local key = keys[i]
+        if type(key) == "string" and key:find("^instance:") then
+            return key
+        end
+    end
+    return nil
+end
+
+local function CanOpenEncounterLoot(vendor)
+    if not vendor then
+        return false
+    end
+    if InstancePlaceKey(vendor) then
+        return true
+    end
+    local encID = FirstEncounterID(vendor)
+    if not encID then
+        return false
+    end
+    if HasNPCRole(vendor, "rare") or HasNPCRole(vendor, "boss") or HasNPCRole(vendor, "vignette") then
+        return true
+    end
+    return not IsRareEncounterID(encID)
+end
+
 local function OpenEncounterLoot(vendor)
     if not vendor or not ns.UI.OpenToInstance then
         return
     end
     local spec = {
         encounterID = FirstEncounterID(vendor),
-        placeKey = vendor.placeKeys and vendor.placeKeys[1],
+        placeKey = InstancePlaceKey(vendor),
     }
     if not spec.encounterID and not spec.placeKey then
         return
@@ -1069,6 +1103,14 @@ local function BindVendorListRow(row, index, vendor, state)
         knownName = nil
         vendor.name = nil
     end
+    if (not knownName) and npcID then
+        local addon = GetDataAddon()
+        local cached = addon and addon.GetCachedNPCName(npcID)
+        if not IsGenericVendorName(cached, npcID) then
+            knownName = cached
+            vendor.name = cached
+        end
+    end
     if knownName then
         paintName(knownName)
     else
@@ -1079,11 +1121,6 @@ local function BindVendorListRow(row, index, vendor, state)
         else
             row.nameText:SetText("NPC #" .. (npcID or "?"))
             row.nameText:SetTextColor(OneWoW_GUI:GetThemeColor("TEXT_MUTED"))
-        end
-        if npcID then
-            FillVendorName(npcID, nil, paintName, function()
-                return row._nameToken == nameToken and row.vendor and row.vendor.npcID == npcID
-            end)
         end
     end
 
@@ -1255,7 +1292,7 @@ local function AddLocationRow(parent, yOffset, vendor, mapID, loc, addon)
     pinLink:SetPoint("LEFT", locLine, "RIGHT", 8, 0)
     tinsert(detailElements, pinLink)
 
-    local rowH = math.max(locLine:GetStringHeight(), pinLink:GetHeight() or 12)
+    local rowH = math.max(locLine:GetHeight() or 12, pinLink:GetHeight() or 12)
     if capturedX and capturedX > 0 and ns.Navigation:IsWayPinsEnabled() then
         local existingID = ns.Navigation:FindOneWayPin(VENDOR_WAYPIN_SOURCE, vendor.npcID, capturedMapID)
         local saveLink = OneWoW_GUI:CreateTextLink(parent, {
@@ -1350,11 +1387,16 @@ local function ShowVendorDetail(panels, vendor)
     nameHeader:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, yOffset)
     nameHeader:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -10, yOffset)
     nameHeader:SetJustifyH("LEFT")
+    local detailNameWasGeneric = IsGenericVendorName(vendor.name, vendor.npcID)
     local function paintDetailName(name)
         if not nameHeader:IsShown() then return end
         nameHeader:SetText(name)
         nameHeader:SetTextColor(OneWoW_GUI:GetThemeColor("ACCENT_PRIMARY"))
         vendor.name = name
+        if detailNameWasGeneric and vendorListAPI then
+            detailNameWasGeneric = false
+            vendorListAPI.Refresh()
+        end
         if panels.vendorTypeDropdownText then
             panels.vendorTypeDropdownText:SetText(
                 vendor.category and ns.VendorCategories:GetLabel(vendor.category)
@@ -1510,7 +1552,7 @@ local function ShowVendorDetail(panels, vendor)
         end
     end
 
-    if FirstEncounterID(vendor) or (vendor.placeKeys and vendor.placeKeys[1]) then
+    if CanOpenEncounterLoot(vendor) then
         local lootLink = OneWoW_GUI:CreateTextLink(parent, {
             text = L["NPCS_VIEW_LOOT"],
             fontSize = 12,

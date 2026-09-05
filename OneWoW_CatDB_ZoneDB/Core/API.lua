@@ -1234,7 +1234,13 @@ end
 ---@param inst table
 ---@return table inst
 function OneWoW_CatDB_ZoneDB_API.EnsureEncounters(inst)
-    if not inst or inst.encountersHydrated then
+    if not inst then
+        return inst
+    end
+    -- ItemSpecial classifies TMog / Mount / Recipe / ... from ItemDB.
+    -- Catalog stores are lazy; toast and ESC pull journal without opening Catalog.
+    OneWoW:EnsureCatalogPack("items")
+    if inst.encountersHydrated then
         return inst
     end
     local bosses, rares, leftoverItems = {}, {}, {}
@@ -1469,6 +1475,11 @@ local function DeliverNPCName(npcID, name)
 end
 
 local function RequestNPCName(npcID, cb)
+    local npcAPI = OneWoW_CatDB_NPCDB_API
+    if npcAPI then
+        npcAPI.RequestNPCName(npcID, cb)
+        return
+    end
     local name = OneWoW_CatDB_ZoneDB_API.ResolveNPCName(npcID)
     if name then
         cb(npcID, { name = name })
@@ -1476,10 +1487,6 @@ local function RequestNPCName(npcID, cb)
     end
     local scanned = ScanCreatureTooltipName(npcID)
     if scanned then
-        local npcAPI = OneWoW_CatDB_NPCDB_API
-        if npcAPI then
-            npcAPI.RememberNPCName(npcID, scanned)
-        end
         cb(npcID, { name = scanned })
         return
     end
@@ -1490,14 +1497,10 @@ local function RequestNPCName(npcID, cb)
         pendingNPCNames[npcID] = list
         C_Timer.After(1, function()
             if pendingNPCNames[npcID] then
-                local later = OneWoW_CatDB_ZoneDB_API.ResolveNPCName(npcID) or ScanCreatureTooltipName(npcID)
-                if later then
-                    local npcAPI = OneWoW_CatDB_NPCDB_API
-                    if npcAPI then
-                        npcAPI.RememberNPCName(npcID, later)
-                    end
-                end
-                DeliverNPCName(npcID, later)
+                DeliverNPCName(
+                    npcID,
+                    OneWoW_CatDB_ZoneDB_API.ResolveNPCName(npcID) or ScanCreatureTooltipName(npcID)
+                )
             end
         end)
     end
