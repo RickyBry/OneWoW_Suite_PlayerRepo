@@ -74,7 +74,12 @@ One command writes Current **and** Archive:
 # from OneWoW_Workspace
 python bin/catdb_quest_emit.py
 python bin/catdb_status.py quest
+python bin/catdb_contribute_merge.py --from EXPORT
 ```
 
 Splits npc pins onto `{ npcID }`, keeps object/area starts as
 `startObjects`.
+
+Live dialog capture writes `global.learned` and sets `sync = true` when
+the quest or its text / givers / rewards are new. CompSync Contribute
+reads those rows only. See [CATDB_CONTRIBUTE](../../OneWoW/Docs/CATDB_CONTRIBUTE.md).

@@ -36,6 +36,10 @@ same table as `GetExpansions()` in `Core/API.lua`.
 Known-recipe state is **not** shipped. Live known-by is AltTracker
 Professions, not a `scanCache` on this pack.
 
+Opening a profession window flags **missing** recipes (and missing
+reagents) with `sync = true` on `global.learned`. CompSync Contribute
+reads those rows only. See [CATDB_CONTRIBUTE](../../OneWoW/Docs/CATDB_CONTRIBUTE.md).
+
 ## IDs only
 
 `item` / `items` / `rg` itemIDs → ItemDB. `npc` → NPCDB. `quest` → QuestDB.
@@ -64,6 +68,7 @@ Recipe fields (all included when present):
 python bin/catdb_tradeskill_emit.py
 python bin/catdb_tradeskill_emit.py --from-db2
 python bin/catdb_status.py tradeskill
+python bin/catdb_contribute_merge.py --from EXPORT
 ```
 
 Emit writes TradeSkillDB. `--from-db2` rebuilds from warehouse CSVs.
