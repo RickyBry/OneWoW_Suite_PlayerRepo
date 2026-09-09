@@ -113,7 +113,7 @@ When it is done, that folder should contain `OneWoW`, `OneWoW_Bags`, `OneWoW_QoL
 
 **Optional features:** `OneWoW_Bags`, `OneWoW_QoL`, `OneWoW_AltTracker`, `OneWoW_Catalog`, `OneWoW_Trackers`, `OneWoW_Notes`, `OneWoW_ShoppingList`, `OneWoW_Mail`, `OneWoW_DirectDeposit`.
 
-**If you use Catalog**, also copy all `OneWoW_CatalogData_*` folders or those tabs will look empty.
+**If you use Catalog**, also copy all `OneWoW_CatDB_*` folders or those tabs will look empty.
 
 **If you use AltTracker**, also copy all `OneWoW_AltTracker_*` companion folders.
 
@@ -263,7 +263,7 @@ Delete the linked folder **inside AddOns** only. Your `OneWoW_Suite_PlayerRepo` 
 |------|---------|
 | **Required** | `OneWoW` |
 | **Features** | `OneWoW_Bags`, `OneWoW_QoL`, `OneWoW_AltTracker`, `OneWoW_Catalog`, `OneWoW_Trackers`, `OneWoW_Notes`, `OneWoW_ShoppingList`, `OneWoW_Mail`, `OneWoW_DirectDeposit` |
-| **Catalog data** | `OneWoW_CatalogData_Journal`, `OneWoW_CatalogData_Vendors`, `OneWoW_CatalogData_Tradeskills`, `OneWoW_CatalogData_Quests`, `OneWoW_CatalogData_Quests_Archive` |
+| **Catalog data** | `OneWoW_CatDB_*` (Classic through Midnight, Other, Tradeskills) |
 | **AltTracker data** | `OneWoW_AltTracker_Storage`, `OneWoW_AltTracker_Character`, `OneWoW_AltTracker_Professions`, `OneWoW_AltTracker_Collections`, `OneWoW_AltTracker_Endgame`, `OneWoW_AltTracker_Auctions`, `OneWoW_AltTracker_Accounting` |
 | **Optional** | `OneWoW_Utility_DevTool` (`/1wdt`) |
 

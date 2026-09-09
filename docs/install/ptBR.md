@@ -111,7 +111,7 @@ Quando terminar, você deve ver `OneWoW`, `OneWoW_Bags`, `OneWoW_QoL` e as outra
 
 **Opcionais:** `OneWoW_Bags`, `OneWoW_QoL`, `OneWoW_AltTracker`, `OneWoW_Catalog`, `OneWoW_Trackers`, `OneWoW_Notes`, `OneWoW_ShoppingList`, `OneWoW_Mail`, `OneWoW_DirectDeposit`.
 
-**Se você usa Catalog**, copie também todas as pastas `OneWoW_CatalogData_*` ou essas abas ficam vazias.
+**Se você usa Catalog**, copie também todas as pastas `OneWoW_CatDB_*` ou essas abas ficam vazias.
 
 **Se você usa AltTracker**, copie também todas as pastas companheiras `OneWoW_AltTracker_*`.
 
@@ -261,7 +261,7 @@ Apague só a pasta vinculada **dentro da AddOns**. O clone `OneWoW_Suite_PlayerR
 |------|--------|
 | **Obrigatório** | `OneWoW` |
 | **Funções** | `OneWoW_Bags`, `OneWoW_QoL`, `OneWoW_AltTracker`, `OneWoW_Catalog`, `OneWoW_Trackers`, `OneWoW_Notes`, `OneWoW_ShoppingList`, `OneWoW_Mail`, `OneWoW_DirectDeposit` |
-| **Dados do Catalog** | `OneWoW_CatalogData_Journal`, `OneWoW_CatalogData_Vendors`, `OneWoW_CatalogData_Tradeskills`, `OneWoW_CatalogData_Quests`, `OneWoW_CatalogData_Quests_Archive` |
+| **Dados do Catalog** | `OneWoW_CatDB_*` |
 | **Dados do AltTracker** | `OneWoW_AltTracker_Storage`, `OneWoW_AltTracker_Character`, `OneWoW_AltTracker_Professions`, `OneWoW_AltTracker_Collections`, `OneWoW_AltTracker_Endgame`, `OneWoW_AltTracker_Auctions`, `OneWoW_AltTracker_Accounting` |
 | **Opcional** | `OneWoW_Utility_DevTool` (`/1wdt`) |
 

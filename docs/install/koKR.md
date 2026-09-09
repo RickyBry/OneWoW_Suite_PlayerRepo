@@ -111,7 +111,7 @@ C:\Program Files (x86)\World of Warcraft\_retail_\Interface\AddOns
 
 **선택 기능:** `OneWoW_Bags`, `OneWoW_QoL`, `OneWoW_AltTracker`, `OneWoW_Catalog`, `OneWoW_Trackers`, `OneWoW_Notes`, `OneWoW_ShoppingList`, `OneWoW_Mail`, `OneWoW_DirectDeposit`.
 
-**Catalog를 쓰면** `OneWoW_CatalogData_*` 폴더도 모두 복사하세요. 그렇지 않으면 해당 탭이 비어 보입니다.
+**Catalog를 쓰면** `OneWoW_CatDB_*` 폴더도 모두 복사하세요. 그렇지 않으면 해당 탭이 비어 보입니다.
 
 **AltTracker를 쓰면** `OneWoW_AltTracker_*` 동반 폴더도 모두 복사하세요.
 
@@ -261,7 +261,7 @@ AddOns **안의** 연결된 폴더만 삭제하세요. `OneWoW_Suite_PlayerRepo`
 |------|------|
 | **필수** | `OneWoW` |
 | **기능** | `OneWoW_Bags`, `OneWoW_QoL`, `OneWoW_AltTracker`, `OneWoW_Catalog`, `OneWoW_Trackers`, `OneWoW_Notes`, `OneWoW_ShoppingList`, `OneWoW_Mail`, `OneWoW_DirectDeposit` |
-| **Catalog 데이터** | `OneWoW_CatalogData_Journal`, `OneWoW_CatalogData_Vendors`, `OneWoW_CatalogData_Tradeskills`, `OneWoW_CatalogData_Quests`, `OneWoW_CatalogData_Quests_Archive` |
+| **Catalog 데이터** | `OneWoW_CatDB_*` |
 | **AltTracker 데이터** | `OneWoW_AltTracker_Storage`, `OneWoW_AltTracker_Character`, `OneWoW_AltTracker_Professions`, `OneWoW_AltTracker_Collections`, `OneWoW_AltTracker_Endgame`, `OneWoW_AltTracker_Auctions`, `OneWoW_AltTracker_Accounting` |
 | **선택** | `OneWoW_Utility_DevTool` (`/1wdt`) |
 

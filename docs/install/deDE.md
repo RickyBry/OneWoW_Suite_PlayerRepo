@@ -111,7 +111,7 @@ Danach sollten `OneWoW`, `OneWoW_Bags`, `OneWoW_QoL` und die anderen `OneWoW_*`-
 
 **Optionale Features:** `OneWoW_Bags`, `OneWoW_QoL`, `OneWoW_AltTracker`, `OneWoW_Catalog`, `OneWoW_Trackers`, `OneWoW_Notes`, `OneWoW_ShoppingList`, `OneWoW_Mail`, `OneWoW_DirectDeposit`.
 
-**Wenn Sie Catalog nutzen**, kopieren Sie auch alle Ordner `OneWoW_CatalogData_*`, sonst bleiben die Reiter leer.
+**Wenn Sie Catalog nutzen**, kopieren Sie auch alle Ordner `OneWoW_CatDB_*`, sonst bleiben die Reiter leer.
 
 **Wenn Sie AltTracker nutzen**, kopieren Sie auch alle Begleitordner `OneWoW_AltTracker_*`.
 
@@ -261,7 +261,7 @@ Nur den verknüpften Ordner **in AddOns** löschen. Der Klon `OneWoW_Suite_Playe
 |-----|--------|
 | **Pflicht** | `OneWoW` |
 | **Features** | `OneWoW_Bags`, `OneWoW_QoL`, `OneWoW_AltTracker`, `OneWoW_Catalog`, `OneWoW_Trackers`, `OneWoW_Notes`, `OneWoW_ShoppingList`, `OneWoW_Mail`, `OneWoW_DirectDeposit` |
-| **Catalog-Daten** | `OneWoW_CatalogData_Journal`, `OneWoW_CatalogData_Vendors`, `OneWoW_CatalogData_Tradeskills`, `OneWoW_CatalogData_Quests`, `OneWoW_CatalogData_Quests_Archive` |
+| **Catalog-Daten** | `OneWoW_CatDB_*` |
 | **AltTracker-Daten** | `OneWoW_AltTracker_Storage`, `OneWoW_AltTracker_Character`, `OneWoW_AltTracker_Professions`, `OneWoW_AltTracker_Collections`, `OneWoW_AltTracker_Endgame`, `OneWoW_AltTracker_Auctions`, `OneWoW_AltTracker_Accounting` |
 | **Optional** | `OneWoW_Utility_DevTool` (`/1wdt`) |
 

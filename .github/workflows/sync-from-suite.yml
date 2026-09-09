@@ -1,5 +1,7 @@
-# Copies addon folders from kellewic/OneWoW_Suite only.
+# Copies shippable addon folders from kellewic/OneWoW_Suite only.
 # Does not touch README.md, docs/, or .github/.
+# Addon set is whatever OneWoW / OneWoW_* dirs have a matching .toc in Suite
+# (core, features, per-expansion CatDB, Other, Tradeskills, AltTracker, DevTool).
 name: Sync from Suite
 
 on:
@@ -21,121 +23,82 @@ jobs:
       - name: Checkout player repo
         uses: actions/checkout@v4
 
-      - name: Checkout Suite addon folders
+      - name: Checkout Suite
         uses: actions/checkout@v4
         with:
           repository: kellewic/OneWoW_Suite
           path: .suite-src
           fetch-depth: 1
-          sparse-checkout-cone-mode: true
-          sparse-checkout: |
-            OneWoW
-            OneWoW_AltTracker
-            OneWoW_AltTracker_Accounting
-            OneWoW_AltTracker_Auctions
-            OneWoW_AltTracker_Character
-            OneWoW_AltTracker_Collections
-            OneWoW_AltTracker_Endgame
-            OneWoW_AltTracker_Professions
-            OneWoW_AltTracker_Storage
-            OneWoW_Bags
-            OneWoW_Catalog
-            OneWoW_CatDB_ItemDB
-            OneWoW_CatDB_NPCDB
-            OneWoW_CatDB_QuestDBArchive
-            OneWoW_CatDB_QuestDBCurrent
-            OneWoW_CatDB_TradeSkillDB
-            OneWoW_CatDB_ZoneDB
-            OneWoW_DirectDeposit
-            OneWoW_Mail
-            OneWoW_Notes
-            OneWoW_QoL
-            OneWoW_ShoppingList
-            OneWoW_Trackers
-            OneWoW_Utility_DevTool
 
       - name: Replace mirrored addon folders
         run: |
           set -euo pipefail
-          folders=(
-            OneWoW
-            OneWoW_AltTracker
-            OneWoW_AltTracker_Accounting
-            OneWoW_AltTracker_Auctions
-            OneWoW_AltTracker_Character
-            OneWoW_AltTracker_Collections
-            OneWoW_AltTracker_Endgame
-            OneWoW_AltTracker_Professions
-            OneWoW_AltTracker_Storage
-            OneWoW_Bags
-            OneWoW_Catalog
-            OneWoW_CatDB_ItemDB
-            OneWoW_CatDB_NPCDB
-            OneWoW_CatDB_QuestDBArchive
-            OneWoW_CatDB_QuestDBCurrent
-            OneWoW_CatDB_TradeSkillDB
-            OneWoW_CatDB_ZoneDB
-            OneWoW_DirectDeposit
-            OneWoW_Mail
-            OneWoW_Notes
-            OneWoW_QoL
-            OneWoW_ShoppingList
-            OneWoW_Trackers
-            OneWoW_Utility_DevTool
-          )
-          stale=(
-            OneWoW_CatalogData_Journal
-            OneWoW_CatalogData_Quests
-            OneWoW_CatalogData_Quests_Archive
-            OneWoW_CatalogData_Tradeskills
-            OneWoW_CatalogData_Vendors
-          )
+          src=.suite-src
+          shopt -s nullglob
+          folders=()
+          for d in "$src/OneWoW" "$src"/OneWoW_*; do
+            [ -d "$d" ] || continue
+            name=$(basename "$d")
+            [ -f "$d/${name}.toc" ] || continue
+            folders+=("$name")
+          done
+          if [ "${#folders[@]}" -eq 0 ]; then
+            echo "No Suite addon folders with a matching .toc" >&2
+            exit 1
+          fi
+          printf 'Mirroring %s addon folders:\n' "${#folders[@]}"
+          printf '  %s\n' "${folders[@]}"
+
+          for d in OneWoW OneWoW_*; do
+            [ -d "$d" ] || continue
+            keep=0
+            for f in "${folders[@]}"; do
+              if [ "$d" = "$f" ]; then
+                keep=1
+                break
+              fi
+            done
+            if [ "$keep" -eq 0 ]; then
+              echo "Removing leftover $d"
+              rm -rf "$d"
+            fi
+          done
+
           for d in "${folders[@]}"; do
-            test -d ".suite-src/$d"
+            test -d "$src/$d"
             rm -rf "$d"
-            cp -a ".suite-src/$d" "$d"
+            cp -a "$src/$d" "$d"
           done
-          for d in "${stale[@]}"; do
-            rm -rf "$d"
-          done
-          rm -rf .suite-src
+          rm -rf "$src"
 
       - name: Commit and push if addons changed
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- \
-            OneWoW \
-            OneWoW_AltTracker \
-            OneWoW_AltTracker_Accounting \
-            OneWoW_AltTracker_Auctions \
-            OneWoW_AltTracker_Character \
-            OneWoW_AltTracker_Collections \
-            OneWoW_AltTracker_Endgame \
-            OneWoW_AltTracker_Professions \
-            OneWoW_AltTracker_Storage \
-            OneWoW_Bags \
-            OneWoW_Catalog \
-            OneWoW_CatDB_ItemDB \
-            OneWoW_CatDB_NPCDB \
-            OneWoW_CatDB_QuestDBArchive \
-            OneWoW_CatDB_QuestDBCurrent \
-            OneWoW_CatDB_TradeSkillDB \
-            OneWoW_CatDB_ZoneDB \
-            OneWoW_DirectDeposit \
-            OneWoW_Mail \
-            OneWoW_Notes \
-            OneWoW_QoL \
-            OneWoW_ShoppingList \
-            OneWoW_Trackers \
-            OneWoW_Utility_DevTool
+
+          shopt -s nullglob
+          addons=()
+          for d in OneWoW OneWoW_*; do
+            [ -d "$d" ] || continue
+            [ -f "$d/${d}.toc" ] || continue
+            addons+=("$d")
+          done
+          git add -- "${addons[@]}"
+          git add -u --
           git rm -rf --ignore-unmatch -- \
             OneWoW_CatalogData_Journal \
             OneWoW_CatalogData_Quests \
             OneWoW_CatalogData_Quests_Archive \
             OneWoW_CatalogData_Tradeskills \
-            OneWoW_CatalogData_Vendors
+            OneWoW_CatalogData_Vendors \
+            OneWoW_CatDB_ItemDB \
+            OneWoW_CatDB_NPCDB \
+            OneWoW_CatDB_QuestDBArchive \
+            OneWoW_CatDB_QuestDBCurrent \
+            OneWoW_CatDB_ZoneDB \
+            OneWoW_CatDB
+
           if git diff --cached --quiet; then
             echo "No addon changes"
             exit 0

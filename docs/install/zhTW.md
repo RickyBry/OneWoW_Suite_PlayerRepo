@@ -111,7 +111,7 @@ C:\Program Files (x86)\World of Warcraft\_retail_\Interface\AddOns
 
 **選用功能：** `OneWoW_Bags`、`OneWoW_QoL`、`OneWoW_AltTracker`、`OneWoW_Catalog`、`OneWoW_Trackers`、`OneWoW_Notes`、`OneWoW_ShoppingList`、`OneWoW_Mail`、`OneWoW_DirectDeposit`。
 
-**如果使用 Catalog**，還要複製所有 `OneWoW_CatalogData_*` 資料夾，否則那些分頁會是空的。
+**如果使用 Catalog**，還要複製所有 `OneWoW_CatDB_*` 資料夾，否則那些分頁會是空的。
 
 **如果使用 AltTracker**，還要複製所有 `OneWoW_AltTracker_*` 配套資料夾。
 
@@ -261,7 +261,7 @@ ln -s "/Users/你的使用者名稱/Documents/OneWoW_Suite_PlayerRepo/OneWoW" "/
 |------|--------|
 | **必須** | `OneWoW` |
 | **功能** | `OneWoW_Bags`、`OneWoW_QoL`、`OneWoW_AltTracker`、`OneWoW_Catalog`、`OneWoW_Trackers`、`OneWoW_Notes`、`OneWoW_ShoppingList`、`OneWoW_Mail`、`OneWoW_DirectDeposit` |
-| **Catalog 資料** | `OneWoW_CatalogData_Journal`、`OneWoW_CatalogData_Vendors`、`OneWoW_CatalogData_Tradeskills`、`OneWoW_CatalogData_Quests`、`OneWoW_CatalogData_Quests_Archive` |
+| **Catalog 資料** | `OneWoW_CatDB_*` |
 | **AltTracker 資料** | `OneWoW_AltTracker_Storage`、`OneWoW_AltTracker_Character`、`OneWoW_AltTracker_Professions`、`OneWoW_AltTracker_Collections`、`OneWoW_AltTracker_Endgame`、`OneWoW_AltTracker_Auctions`、`OneWoW_AltTracker_Accounting` |
 | **選用** | `OneWoW_Utility_DevTool`（`/1wdt`） |
 
