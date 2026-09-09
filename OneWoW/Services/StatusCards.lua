@@ -32,6 +32,7 @@ local CHIP_RESERVE = 110
 local CHIP_ICON = 16
 local DURABILITY_ALERT_PCT = 25
 local COLLECT_ROW_H = 22
+local COLLECT_VIEW_MAX = 5 * (COLLECT_ROW_H + 8)
 local STAT_BAR_H = C.PROGRESS_BAR.HEIGHT
 local VAULT_TRACK_GAP = 6
 local LIST_HIT_TOOLTIP_MAX = 8
@@ -866,8 +867,7 @@ local function CollectTrackerAlerts(place)
     return api.GetIncompleteHitsForMap(mapIDs)
 end
 
-local function ResolveCurrentPlace()
-    local api = OneWoW:GetCatalogPackAPI("journal")
+local function LookupCurrentPlace(api)
     if not api then
         return nil
     end
@@ -880,6 +880,10 @@ local function ResolveCurrentPlace()
     end
     if not instData and uiMapID and api.GetZoneInstance then
         instData = api.GetZoneInstance(nil, uiMapID)
+    end
+    if not instData and uiMapID and api.GetInstancesByMapID then
+        local all = api.GetInstancesByMapID(uiMapID)
+        instData = all[#all]
     end
     if not instData and instanceMapID and api.GetInstancesByMapID then
         local all = api.GetInstancesByMapID(instanceMapID)
@@ -896,6 +900,20 @@ local function ResolveCurrentPlace()
         diffName = diffName,
         mapID = instData.mapID or instData.uiMapID or uiMapID or instanceMapID,
     }
+end
+
+local function ResolveCurrentPlace()
+    if OneWoW:IsCatalogPackAvailable("journal") then
+        local expansionID = OneWoW.CatalogData:GetCurrentSuiteExpansionID()
+        if expansionID ~= 0 then
+            OneWoW:EnsureJournalShards(expansionID)
+        end
+    end
+    return LookupCurrentPlace(OneWoW:GetCatalogPackAPI("journal"))
+end
+
+function StatusCards:LookupPlace(api)
+    return LookupCurrentPlace(api)
 end
 
 local function PlaceTypeLabel(instData)
@@ -940,6 +958,7 @@ function StatusCards:CollectHere(opts)
         OneWoW:BringUp("OneWoW_Notes")
     end
     local place = ResolveCurrentPlace()
+    local journalReady = place ~= nil or OneWoW:AreWantedJournalPlacesLoaded()
     local zoneText = GetZoneText() or ""
     local subZoneText = GetSubZoneText() or ""
     if subZoneText == zoneText then
@@ -960,7 +979,7 @@ function StatusCards:CollectHere(opts)
     return {
         place = place,
         displayZone = displayZone,
-        journalReady = OneWoW:GetCatalogPackAPI("journal") ~= nil,
+        journalReady = journalReady,
         journalAvailable = OneWoW:IsCatalogPackAvailable("journal"),
         alerts = {
             shopping = CollectShoppingHits(place),
@@ -1952,11 +1971,15 @@ local function ApplyCollectIcon(texture, def)
 end
 
 local function AcquireCollectRow(panel, index)
+    local parent = panel.collectScrollChild or panel
     local row = panel.collectRows[index]
     if row then
+        if row:GetParent() ~= parent then
+            row:SetParent(parent)
+        end
         return row
     end
-    row = CreateFrame("Frame", nil, panel)
+    row = CreateFrame("Frame", nil, parent)
     row:SetHeight(COLLECT_ROW_H)
     row:EnableMouse(false)
     local icon = row:CreateTexture(nil, "ARTWORK")
@@ -1997,6 +2020,7 @@ function StatusCards:CreateHere(parent, opts)
     panel.showZoneNotes = opts.zoneNotes == true
     panel.flexHeight = opts.flexHeight
     panel.fixedHeight = opts.fixedHeight
+    panel:SetClipsChildren(true)
 
     local header = OneWoW_GUI:CreateFS(panel, 16)
     header:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PADDING + 4, -PANEL_PADDING)
@@ -2038,6 +2062,14 @@ function StatusCards:CreateHere(parent, opts)
     emptyText:Hide()
     panel.emptyText = emptyText
     panel.collectRows = {}
+
+    if panel.showCollections then
+        local sf, sc = OneWoW_GUI:CreateScrollFrame(panel, { width = opts.width or 350 })
+        sf:SetClipsChildren(true)
+        panel.collectScroll = sf
+        panel.collectScrollChild = sc
+        sf:Hide()
+    end
 
     if panel.showZoneNotes then
         local notesHeader = OneWoW_GUI:CreateFS(panel, 12)
@@ -2229,6 +2261,10 @@ function StatusCards:RefreshHere(panel, data)
                 L["STATUSCARD_ZONES_NOT_LOADED"],
                 L["STATUSCARD_CLICK_LOAD_ZONES"],
             }
+        elseif not data.journalReady then
+            panel.clickTooltipLines = {
+                L["CATALOG_NOT_ENABLED"],
+            }
         else
             panel.clickTooltipLines = nil
         end
@@ -2289,14 +2325,18 @@ function StatusCards:RefreshHere(panel, data)
             end
         end
     end
+    local innerW = panel._width - 2 * (PANEL_PADDING + 4)
     if #countParts > 0 then
         panel.countsText:ClearAllPoints()
         panel.countsText:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PADDING + 4, -y - 3)
-        panel.countsText:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PANEL_PADDING, -y - 3)
+        panel.countsText:SetWidth(innerW)
+        panel.countsText:SetWordWrap(true)
         panel.countsText:SetText(table.concat(countParts, " | "))
         panel.countsText:SetTextColor(OneWoW_GUI:GetThemeColor("TEXT_PRIMARY"))
         panel.countsText:Show()
-        y = y + 3 + (panel.countsText:GetStringHeight() or 12)
+        local countH = panel.countsText:GetStringHeight() or 12
+        panel.countsText:SetHeight(countH)
+        y = y + 3 + countH
     else
         panel.countsText:Hide()
     end
@@ -2306,6 +2346,10 @@ function StatusCards:RefreshHere(panel, data)
     panel.alertRow:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PANEL_PADDING, -(y + 4))
     panel.alertRow:SetLabel(L["STATUSCARD_ITEM_ALERT"])
     y = y + 4 + panel.alertRow:SetHits(data.alerts)
+
+    if panel.collectScroll then
+        panel.collectScroll:Hide()
+    end
 
     if panel.showCollections and total > 0 then
         panel.emptyText:Hide()
@@ -2319,11 +2363,16 @@ function StatusCards:RefreshHere(panel, data)
             panel.overallBar._text:Show()
         end
         y = y + 8 + 10
+        local child = panel.collectScrollChild
+        local contentH = 0
         for i, entry in ipairs(visible) do
+            if i > 1 then
+                contentH = contentH + 8
+            end
             local row = AcquireCollectRow(panel, i)
             row:ClearAllPoints()
-            row:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PADDING + 4, -(y + 8))
-            row:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PANEL_PADDING, -(y + 8))
+            row:SetPoint("TOPLEFT", child, "TOPLEFT", 0, -contentH)
+            row:SetPoint("TOPRIGHT", child, "TOPRIGHT", 0, -contentH)
             ApplyCollectIcon(row.icon, entry.def)
             row.label:SetFormattedText(L[entry.def.fmt], entry.current, entry.total)
             if entry.current >= entry.total then
@@ -2333,11 +2382,26 @@ function StatusCards:RefreshHere(panel, data)
             end
             row.bar:UpdateProgress(entry.current, entry.total)
             row:Show()
-            y = y + 8 + COLLECT_ROW_H
+            contentH = contentH + COLLECT_ROW_H
         end
         for i = #visible + 1, #panel.collectRows do
             panel.collectRows[i]:Hide()
         end
+        child:SetHeight(math.max(1, contentH))
+        local viewH = contentH
+        if viewH > COLLECT_VIEW_MAX then
+            viewH = COLLECT_VIEW_MAX
+        end
+        local sf = panel.collectScroll
+        sf:ClearAllPoints()
+        sf:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PADDING + 4, -(y + 8))
+        sf:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PANEL_PADDING, -(y + 8))
+        sf:SetHeight(viewH)
+        sf:Show()
+        if sf.SetVerticalScroll then
+            sf:SetVerticalScroll(0)
+        end
+        y = y + 8 + viewH
     else
         panel.overallBar:Hide()
         for i = 1, #panel.collectRows do
@@ -2347,22 +2411,28 @@ function StatusCards:RefreshHere(panel, data)
             panel.emptyText:Show()
             panel.emptyText:ClearAllPoints()
             panel.emptyText:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PADDING + 4, -(y + 8))
-            panel.emptyText:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PANEL_PADDING, -(y + 8))
+            panel.emptyText:SetWidth(innerW)
+            panel.emptyText:SetWordWrap(true)
             panel.emptyText:SetText(L["STATUSCARD_NO_COLLECTIONS"])
             panel.emptyText:SetTextColor(OneWoW_GUI:GetThemeColor("TEXT_MUTED"))
-            y = y + 8 + (panel.emptyText:GetStringHeight() or 12)
-        elseif panel.showCollections and not data.journalReady then
+            local emptyH = panel.emptyText:GetStringHeight() or 12
+            panel.emptyText:SetHeight(emptyH)
+            y = y + 8 + emptyH
+        elseif not data.journalReady then
             panel.emptyText:Show()
             panel.emptyText:ClearAllPoints()
             panel.emptyText:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PADDING + 4, -(y + 8))
-            panel.emptyText:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PANEL_PADDING, -(y + 8))
+            panel.emptyText:SetWidth(innerW)
+            panel.emptyText:SetWordWrap(true)
             if data.journalAvailable and panel.interactive then
                 panel.emptyText:SetText(L["STATUSCARD_ZONES_NOT_LOADED"] .. ". " .. L["STATUSCARD_CLICK_LOAD_ZONES"])
             else
-                panel.emptyText:SetText(L["STATUSCARD_ZONES_NOT_LOADED"])
+                panel.emptyText:SetText(L["CATALOG_NOT_ENABLED"])
             end
             panel.emptyText:SetTextColor(OneWoW_GUI:GetThemeColor("TEXT_MUTED"))
-            y = y + 8 + (panel.emptyText:GetStringHeight() or 12)
+            local emptyH = panel.emptyText:GetStringHeight() or 12
+            panel.emptyText:SetHeight(emptyH)
+            y = y + 8 + emptyH
         else
             panel.emptyText:Hide()
         end

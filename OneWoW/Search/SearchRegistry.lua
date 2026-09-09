@@ -58,7 +58,7 @@ local INTENT = {
 local TAB_EXTRA_TAGS = {
     waypins = { "pins", "pin", "oneway", "map pin", "map pins", "minimap pin" },
     collectibles = { "mount", "pet", "toy", "transmog" },
-    toastalerts = { "popup", "pop-up", "notification", "alert", "toast" },
+    toastalerts = { "popup", "pop-up", "notification", "alert", "toast", "upgrade", "collection", "loot" },
     overlays = { "overlay", "bag overlay", "bag icon" },
     tooltips = { "tooltip", "hover" },
     quests = { "quest", "quest log" },
@@ -67,7 +67,7 @@ local TAB_EXTRA_TAGS = {
 }
 
 local FEATURE_TAB_TAGS = {
-    toastalerts = { "toast", "popup", "pop-up", "notification", "alert" },
+    toastalerts = { "toast", "popup", "pop-up", "notification", "alert", "upgrade", "collection", "loot" },
     overlays = { "overlay", "overlays", "bag overlay" },
     tooltips = { "tooltip", "tooltips", "hover" },
 }
@@ -492,7 +492,12 @@ function reg:RegisterCVarRow(row)
     end
     self:Register({
         id = "cvar:" .. row.cvar,
-        title = row.name,
+        title = function()
+            if row.nameGlobal then
+                return _G[row.nameGlobal] or row.nameGlobal
+            end
+            return ResolveText(row.name, "OneWoW_QoL")
+        end,
         description = row.desc,
         scope = "OneWoW_QoL",
         tags = { row.cvar, strlower(cat) },
@@ -501,7 +506,12 @@ function reg:RegisterCVarRow(row)
             self.ModuleLabel("qol"),
             function() return qolL()["TAB_TOGGLES"] end,
             function() return qolL()["TOGGLE_CAT_" .. cat] end,
-            function() return ResolveText(row.name, "OneWoW_QoL") end,
+            function()
+                if row.nameGlobal then
+                    return _G[row.nameGlobal] or row.nameGlobal
+                end
+                return ResolveText(row.name, "OneWoW_QoL")
+            end,
         },
         nav = { module = "qol", subtab = "toggles" },
     })

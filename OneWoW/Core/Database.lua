@@ -74,12 +74,9 @@ local DEFAULTS = {
         showGarrisonHearth = true,
         showFlightWhistle = true,
         showHousingPortal = true,
-        escShowZoneNotes = true,
-        escHideZoneNotesWhenEmpty = false,
-        escShowAlerts = true,
+        escShowHere = true,
         escPortalsEnabled = true,
         escShowCharacterInfo = true,
-        escShowEndeavors = true,
         escPanelsSide = "left",
         escPortalsSide = "right",
         allFavorites = {},
@@ -302,6 +299,8 @@ local DEFAULTS = {
                 recipes = false,
                 recipesOnlyMyProfessions = false,
                 tmogs   = false,
+                housing = false,
+                heirlooms = false,
                 suppressBlizzardAlerts = false,
                 sound   = SOUNDKIT.READY_CHECK,
             },
@@ -314,7 +313,7 @@ local DEFAULTS = {
                 items   = false,
                 sound   = SOUNDKIT.ACHIEVEMENT_MENU_OPEN,
             },
-            upgrades       = { enabled = false },
+            upgrades       = { enabled = false, sound = SOUNDKIT.READY_CHECK },
             anchor         = { visible = true, locked = false },
         },
         tooltips = {
@@ -436,6 +435,9 @@ local DEFAULTS = {
         quest = {},
         recipe = {},
     },
+    -- Per-era CatDB topic toggles: [addonName] = { hubs=true, zone=false, ... }.
+    -- Missing keys use CatalogData defaults (hubs on; current two expansions on).
+    catalogTopics = {},
 }
 
 --- Fresh copy of the shipped defaults subtree for one settings tab
