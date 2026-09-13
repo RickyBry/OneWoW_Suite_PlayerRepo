@@ -81,6 +81,7 @@ OneWoW.Locale:Register(ADDON_NAME, "zhCN", {
 
     ["JOURNAL_CARD_CITY"] = "主城",
     ["JOURNAL_CARD_DUNGEON"] = "地下城",
+    ["JOURNAL_CARD_BOUNTIFUL"] = "丰裕",
     ["JOURNAL_CARD_ENCOUNTER_ONE"] = "%d 个首领",
     ["JOURNAL_CARD_ENCOUNTERS"] = "%d 个首领",
     ["JOURNAL_CARD_RARE_ONE"] = "%d 个稀有",
@@ -111,6 +112,7 @@ OneWoW.Locale:Register(ADDON_NAME, "zhCN", {
 
     ["JOURNAL_HAS_UNCOLLECTED"] = "有未收集",
     ["JOURNAL_SHOW_BOUNTIFUL"] = "仅显示丰裕",
+    ["JOURNAL_ZONE_CONTENTS"] = "此区域内",
 
     ["JOURNAL_GENERAL_LOOT"] = "通用战利品",
     ["JOURNAL_QUEST_LOOT"] = "任务相关 / 任务掉落",
@@ -137,6 +139,10 @@ OneWoW.Locale:Register(ADDON_NAME, "zhCN", {
     ["JOURNAL_OPEN_ZONE_TT"] = "打开此地区的卡片",
     ["JOURNAL_SEE_NPC"] = "查看 NPC",
     ["JOURNAL_SEE_NPC_TT"] = "在 NPC 标签中打开此 NPC。",
+    ["JOURNAL_SEE_NPCS"] = "查看 NPC",
+    ["JOURNAL_SEE_NPCS_TT"] = "在 NPC 标签中打开此地的 NPC。",
+    ["JOURNAL_SEE_GUIDE"] = "查看指南",
+    ["JOURNAL_SEE_GUIDE_TT"] = "在冒险指南中打开此首领。",
     ["JOURNAL_SEE_MAP"] = "查看地图",
     ["JOURNAL_SEE_MAP_TT"] = "打开地图并在此首领处放置标记。",
     ["JOURNAL_ATT_DETECTED"] = "已检测到 ATT",

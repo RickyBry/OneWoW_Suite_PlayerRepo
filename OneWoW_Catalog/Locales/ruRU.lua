@@ -81,6 +81,7 @@ OneWoW.Locale:Register(ADDON_NAME, "ruRU", {
 
     ["JOURNAL_CARD_CITY"] = "Город",
     ["JOURNAL_CARD_DUNGEON"] = "Подземелье",
+    ["JOURNAL_CARD_BOUNTIFUL"] = "Многообещающая",
     ["JOURNAL_CARD_ENCOUNTER_ONE"] = "Босс: %d",
     ["JOURNAL_CARD_ENCOUNTERS"] = "Боссов: %d",
     ["JOURNAL_CARD_RARE_ONE"] = "Редкий: %d",
@@ -111,6 +112,7 @@ OneWoW.Locale:Register(ADDON_NAME, "ruRU", {
 
     ["JOURNAL_HAS_UNCOLLECTED"] = "Есть несобранное",
     ["JOURNAL_SHOW_BOUNTIFUL"] = "Только многообещающие",
+    ["JOURNAL_ZONE_CONTENTS"] = "В этой зоне",
 
     ["JOURNAL_GENERAL_LOOT"] = "Общая добыча",
     ["JOURNAL_QUEST_LOOT"] = "Связано с заданием / Добыча задания",
@@ -137,6 +139,10 @@ OneWoW.Locale:Register(ADDON_NAME, "ruRU", {
     ["JOURNAL_OPEN_ZONE_TT"] = "Открыть карточку этой зоны",
     ["JOURNAL_SEE_NPC"] = "Показать НИП",
     ["JOURNAL_SEE_NPC_TT"] = "Открывает этого НИП на вкладке НИП.",
+    ["JOURNAL_SEE_NPCS"] = "Показать НИП",
+    ["JOURNAL_SEE_NPCS_TT"] = "Открывает НИП этого места на вкладке НИП.",
+    ["JOURNAL_SEE_GUIDE"] = "Открыть журнал",
+    ["JOURNAL_SEE_GUIDE_TT"] = "Открывает эту встречу в Путеводителе по приключениям.",
     ["JOURNAL_SEE_MAP"] = "Показать карту",
     ["JOURNAL_SEE_MAP_TT"] = "Открывает карту и ставит метку на это сражение.",
     ["JOURNAL_ATT_DETECTED"] = "ATT обнаружен",

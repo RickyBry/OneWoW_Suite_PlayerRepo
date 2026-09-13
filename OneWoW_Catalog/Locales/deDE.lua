@@ -81,6 +81,7 @@ OneWoW.Locale:Register(ADDON_NAME, "deDE", {
 
     ["JOURNAL_CARD_CITY"] = "Stadt",
     ["JOURNAL_CARD_DUNGEON"] = "Dungeon",
+    ["JOURNAL_CARD_BOUNTIFUL"] = "Großzügig",
     ["JOURNAL_CARD_ENCOUNTER_ONE"] = "%d Boss",
     ["JOURNAL_CARD_ENCOUNTERS"] = "%d Bosse",
     ["JOURNAL_CARD_RARE_ONE"] = "%d Rare",
@@ -111,6 +112,7 @@ OneWoW.Locale:Register(ADDON_NAME, "deDE", {
 
     ["JOURNAL_HAS_UNCOLLECTED"] = "Hat Ungesammeltes",
     ["JOURNAL_SHOW_BOUNTIFUL"] = "Nur großzügige",
+    ["JOURNAL_ZONE_CONTENTS"] = "In dieser Zone",
 
     ["JOURNAL_GENERAL_LOOT"] = "Allgemeine Beute",
     ["JOURNAL_QUEST_LOOT"] = "Questbezogen / Questbeute",
@@ -137,6 +139,10 @@ OneWoW.Locale:Register(ADDON_NAME, "deDE", {
     ["JOURNAL_OPEN_ZONE_TT"] = "Karte dieser Zone öffnen",
     ["JOURNAL_SEE_NPC"] = "NSC anzeigen",
     ["JOURNAL_SEE_NPC_TT"] = "Öffnet diesen NSC im Reiter NSCs.",
+    ["JOURNAL_SEE_NPCS"] = "NSCs anzeigen",
+    ["JOURNAL_SEE_NPCS_TT"] = "Öffnet die NSCs für diesen Ort.",
+    ["JOURNAL_SEE_GUIDE"] = "Guide anzeigen",
+    ["JOURNAL_SEE_GUIDE_TT"] = "Öffnet diese Begegnung im Abenteuerführer.",
     ["JOURNAL_SEE_MAP"] = "Karte anzeigen",
     ["JOURNAL_SEE_MAP_TT"] = "Öffnet die Karte und setzt eine Markierung bei dieser Begegnung.",
     ["JOURNAL_ATT_DETECTED"] = "ATT erkannt",
