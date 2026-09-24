@@ -26,7 +26,7 @@ the overlay is shown. Patron / Guild / Personal are always a flat order list.
   (Order name stays pinned left). Defaults show You Provide, Cart,
   Profit / Loss, Time, and Craft, in that order. Gold, Customer Provides,
   and You Receive start hidden. Icon sizes default to 27. "Only mats I still
-  need" starts on. Profit / Loss prices default to OneWoW. Compact View
+  need" starts off. Profit / Loss prices default to OneWoW. Compact View
   starts on (Blizzard's 20px row height, icons capped at 16; icon sliders
   apply when Compact View is off). Features has a width slider for each
   shown column (maximums; they still apply in Compact View). Hide list
@@ -50,9 +50,11 @@ the overlay is shown. Patron / Guild / Personal are always a flat order list.
   every reagent already allocated on the order (`order.reagents` covers that
   slot). You Provide is required recipe slots with no allocation. Owned count
   is bags + character bank + reagent bank + warband bank. Rewards are
-  item/currency/gold icons with counts. Optional Gold shows **Your Cut**
+  item/currency/gold icons with counts.   Optional Gold shows **Your Cut**
   (commission minus Consortium Cut) as a money string; hover a row for
   commission, Consortium Cut, and Your Cut (always, including a 0 cut).
+  Gold only, under Columns, drops silver and copper from that cell. The
+  hover still lists them.
   Public recipe buckets have no cut on the API, so Gold stays as max tip
   and the hover also shows average commission when it differs.
   Optional Profit / Loss is the same net tip, plus
