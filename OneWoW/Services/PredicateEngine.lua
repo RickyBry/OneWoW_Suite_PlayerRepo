@@ -2770,7 +2770,7 @@ function PE:BuildProps(itemID, bagID, slotID, itemInfo)
 
         -- ---- Item durability ----
         local durability, maxDurability = C_Container.GetContainerItemDurability(bagID, slotID)
-        if durability then
+        if durability and maxDurability > 0 then
             props.durability = durability
             props.maxDurability = maxDurability
             props.durabilityPct = (durability/maxDurability)*100    -- Let the caller decide if they want to floor, ceil, or round
@@ -3738,7 +3738,7 @@ function PE:GetAllKeywords()
                 tinsert(aliases, name)
             end
         end
-        table.sort(aliases)
+        sort(aliases)
         if not seen[canonical] then
             seen[canonical] = true
             tinsert(results, { canonical = canonical, aliases = aliases })
@@ -3747,6 +3747,8 @@ function PE:GetAllKeywords()
 
     return results
 end
+
+local reportedKeywordErrors = {}
 
 --- List every registered built-in keyword that matches a given item.
 --- Returns an ordered array of canonical keyword names (without the leading "#").
@@ -3780,7 +3782,13 @@ function PE:GetMatchingKeywords(itemID, bagID, slotID, itemInfo)
 
     for _, entry in ipairs(KEYWORD_CANONICAL_ORDER) do
         local ok, matched = pcall(entry.fn, props)
-        if ok and matched then
+        if not ok then
+            -- One broken keyword must not hide the rest; report it once per session.
+            if not reportedKeywordErrors[entry.name] then
+                reportedKeywordErrors[entry.name] = true
+                geterrorhandler()(string.format("OneWoW keyword '#%s': %s", entry.name, tostring(matched)))
+            end
+        elseif matched then
             tinsert(results, entry.name)
         end
     end

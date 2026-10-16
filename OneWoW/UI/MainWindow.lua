@@ -823,9 +823,7 @@ end
 function UI:SelectModuleTab(moduleName, targetSub)
     -- Lazy modules load the first time their tab is opened. Dormant until modules
     -- become LoadOnDemand; a no-op while all modules are login-phase.
-    if ns.LoadOrchestrator then
-        ns.LoadOrchestrator:EnsureModuleForTab(moduleName)
-    end
+    ns.LoadOrchestrator:EnsureModuleForTab(moduleName)
 
     local leave = nil
     if not UI.NavHistory.IsApplying() and UI.NavHistory.IsArmed() then
@@ -1277,21 +1275,14 @@ function UI:InitMainWindow()
     favoriteStar:SetPoint("LEFT", subNavDropdown, "RIGHT", OneWoW_GUI:GetSpacing("SM"), 0)
     favoriteStar:Hide()
 
-    local searchBoxFrame = nil
-    if ns.Search then
-        searchBoxFrame = ns.Search:Init(row1Container)
-    end
+    local searchBoxFrame = ns.Search:Init(row1Container)
 
     -- Pin row matches section dropdown left / search right (not full window bleed).
     local row2Gap = OneWoW_GUI:GetSpacing("XS")
     row2Container:ClearAllPoints()
     row2Container:SetPoint("TOP", row1Container, "BOTTOM", 0, -row2Gap)
     row2Container:SetPoint("LEFT", sectionNavDropdown, "LEFT", 0, 0)
-    if searchBoxFrame then
-        row2Container:SetPoint("RIGHT", searchBoxFrame, "RIGHT", 0, 0)
-    else
-        row2Container:SetPoint("RIGHT", row1Container, "RIGHT", -OneWoW_GUI:GetSpacing("SM"), 0)
-    end
+    row2Container:SetPoint("RIGHT", searchBoxFrame, "RIGHT", 0, 0)
 
     local refreshingPinRow = false
     row2Container:SetScript("OnSizeChanged", function()

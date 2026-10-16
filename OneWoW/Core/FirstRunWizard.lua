@@ -524,30 +524,26 @@ function FirstRun:ShowStoreAffectedDialog(storeAddon)
     local keys = STORE_AFFECTED_KEYS[storeAddon]
     if not keys then return end
 
-    local dialogKey = "OneWoW_StoreAffectedDialog"
-    if FirstRun._affectedDialog and FirstRun._affectedDialog:IsShown() then
-        FirstRun._affectedDialog:Hide()
-    end
-
-    local result = OneWoW_GUI:CreateDialog({
-        name            = dialogKey,
-        title           = L[keys.title],
+    local result = OneWoW_GUI:GetOrCreateDialog({
+        name            = "OneWoW_StoreAffectedDialog",
         width           = 480,
         height          = 360,
         showScrollFrame = true,
         buttons         = {
             { text = CLOSE, onClick = function(frame) frame:Hide() end },
         },
-    })
-    FirstRun._affectedDialog = result.frame
+    }, function(built)
+        local body = OneWoW_GUI:CreateFS(built.scrollContent, 12)
+        body:SetPoint("TOPLEFT", built.scrollContent, "TOPLEFT", 12, -12)
+        body:SetPoint("TOPRIGHT", built.scrollContent, "TOPRIGHT", -12, -12)
+        body:SetJustifyH("LEFT")
+        body:SetWordWrap(true)
+        built.body = body
+    end)
 
-    local body = OneWoW_GUI:CreateFS(result.scrollContent, 12)
-    body:SetPoint("TOPLEFT", result.scrollContent, "TOPLEFT", 12, -12)
-    body:SetPoint("TOPRIGHT", result.scrollContent, "TOPRIGHT", -12, -12)
-    body:SetJustifyH("LEFT")
-    body:SetWordWrap(true)
-    body:SetText(L[keys.body] or "")
-    result.scrollContent:SetHeight(math.max(40, body:GetStringHeight() + 24))
+    result.titleBar._titleText:SetText(L[keys.title])
+    result.body:SetText(L[keys.body] or "")
+    result.scrollContent:SetHeight(math.max(40, result.body:GetStringHeight() + 24))
 
     result.frame:Show()
     result.frame:Raise()
@@ -1026,7 +1022,7 @@ function FirstRun:BuildPanel(parent, opts)
             yOffset = 0,
         })
         groupHeader:ClearAllPoints()
-        table.insert(listItems, groupHeader)
+        tinsert(listItems, groupHeader)
         headerIndices[#listItems] = true
 
         for _, entry in ipairs(FirstRun.CATALOG) do
@@ -1145,7 +1141,7 @@ function FirstRun:BuildPanel(parent, opts)
                 card.loadBtn = loadBtn
 
                 cards[addon] = card
-                table.insert(listItems, card)
+                tinsert(listItems, card)
 
                 local manifest = ns:GetManifestByAddon(addon)
                 if manifest and manifest.stores then
@@ -1192,7 +1188,7 @@ function FirstRun:BuildPanel(parent, opts)
                         sub:ClearAllPoints()
                         storeCards[store] = sub
                         storeMeta[store] = { parent = addon, optional = isOptional }
-                        table.insert(listItems, sub)
+                        tinsert(listItems, sub)
 
                         if ns.CatalogData:IsEraAddon(store) then
                             subRowTightAfter[#listItems] = true
@@ -1255,7 +1251,7 @@ function FirstRun:BuildPanel(parent, opts)
                                 row._layingOut = nil
                             end)
                             topicRows[store] = topicRow
-                            table.insert(listItems, topicRow)
+                            tinsert(listItems, topicRow)
                             if si < #visibleStores then
                                 subRowTightAfter[#listItems] = true
                             end
@@ -1288,7 +1284,7 @@ function FirstRun:BuildPanel(parent, opts)
                         sub:ClearAllPoints()
                         featureCards[feat.id] = sub
                         featureMeta[feat.id] = { parent = addon, feat = feat }
-                        table.insert(listItems, sub)
+                        tinsert(listItems, sub)
                         if fi < #entry.inUnitFeatures then
                             subRowTightAfter[#listItems] = true
                         end

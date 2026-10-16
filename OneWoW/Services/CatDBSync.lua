@@ -32,6 +32,7 @@ local INTERACT_UNITS = { "npc", "questnpc", "target" }
 local KINDS = { "npc", "quest", "recipe" }
 
 local getters = {}
+local reportedGetterErrors = {}
 local session = { npc = {}, quest = {}, recipe = {} }
 local questLoadQueued = false
 local recipeLoadQueued = false
@@ -296,7 +297,13 @@ function CatDBSync.GetQueue()
     }
     for pack, getter in pairs(getters) do
         local ok, rows = pcall(getter)
-        if ok and type(rows) == "table" then
+        if not ok then
+            -- One failing pack must not drop the others; report it once per session.
+            if not reportedGetterErrors[pack] then
+                reportedGetterErrors[pack] = true
+                geterrorhandler()(string.format("OneWoW CatDBSync queue '%s': %s", pack, tostring(rows)))
+            end
+        elseif type(rows) == "table" then
             local dest = out[pack]
             if type(dest) ~= "table" then
                 dest = {}
@@ -355,6 +362,12 @@ function CatDBSync.LearnRecipe(recipeID, info)
     Queue("recipe", recipeID, info)
 end
 
+-- Unit identity can be secret while the GUID is not; secrets read as unknown.
+local function Plain(value)
+    if value == nil or ns.Restriction.IsSecret(value) then return nil end
+    return value
+end
+
 local function GetInteractUnit()
     for _, unit in ipairs(INTERACT_UNITS) do
         if UnitExists(unit) then
@@ -368,9 +381,9 @@ local function GetInteractUnit()
                     return {
                         unit = unit,
                         id = unitID,
-                        name = UnitName(unit),
-                        creatureType = UnitCreatureType(unit),
-                        classification = UnitClassification(unit),
+                        name = Plain(UnitName(unit)),
+                        creatureType = Plain(UnitCreatureType(unit)),
+                        classification = Plain(UnitClassification(unit)),
                     }
                 end
             end

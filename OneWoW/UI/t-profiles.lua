@@ -188,17 +188,13 @@ end
 -- ============================================================
 
 ns:RegisterCoreLoginHandler("profiles.AutoSaveDefault", function()
-    if ns.Profiles and ns.Profiles.AutoSaveDefault then
-        ns.Profiles.AutoSaveDefault()
-    end
+    ns.Profiles.AutoSaveDefault()
 end)
 
 local _autoSaveFrame = CreateFrame("Frame")
 _autoSaveFrame:RegisterEvent("PLAYER_LOGOUT")
 _autoSaveFrame:SetScript("OnEvent", function()
-    if ns.Profiles and ns.Profiles.AutoSaveDefault then
-        ns.Profiles.AutoSaveDefault()
-    end
+    ns.Profiles.AutoSaveDefault()
 end)
 
 -- ============================================================
@@ -206,35 +202,36 @@ end)
 -- ============================================================
 
 function UI:ShowSettingsProfileExportDialog(profileName, serializedStr)
-    local eb
-    local result = OneWoW_GUI:CreateDialog({
+    local result = OneWoW_GUI:GetOrCreateDialog({
         name   = "OneWoW_SettingsProfileExportDialog",
-        title  = "Export Profile: |cFFFFD100" .. profileName .. "|r",
         width  = 620,
         height = 500,
         strata = "FULLSCREEN_DIALOG",
         showBrand = true,
         buttons = {
-            { text = "Select All", onClick = function() eb:SetFocus(); eb:HighlightText() end },
+            { text = "Select All", onClick = function(d) d._editBox:SetFocus(); d._editBox:HighlightText() end },
             { text = "Close",      onClick = function(d) d:Hide() end },
         },
-    })
+    }, function(dialog)
+        local cf = dialog.contentFrame
 
-    local cf = result.contentFrame
+        local hint = OneWoW_GUI:CreateFS(cf, 10)
+        hint:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -8)
+        hint:SetText("Select all and copy (Ctrl+A, Ctrl+C) to share this profile:")
+        hint:SetTextColor(OneWoW_GUI:GetThemeColor("TEXT_SECONDARY"))
 
-    local hint = OneWoW_GUI:CreateFS(cf, 10)
-    hint:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -8)
-    hint:SetText("Select all and copy (Ctrl+A, Ctrl+C) to share this profile:")
-    hint:SetTextColor(OneWoW_GUI:GetThemeColor("TEXT_SECONDARY"))
+        local textBG = OneWoW_GUI:CreateFrame(cf, { width = 600, height = 420, backdrop = Constants.BACKDROP_SOFT })
+        textBG:ClearAllPoints()
+        textBG:SetPoint("TOPLEFT",     cf, "TOPLEFT",     10, -28)
+        textBG:SetPoint("BOTTOMRIGHT", cf, "BOTTOMRIGHT", -10, 4)
 
-    local textBG = OneWoW_GUI:CreateFrame(cf, { width = 600, height = 420, backdrop = Constants.BACKDROP_SOFT })
-    textBG:ClearAllPoints()
-    textBG:SetPoint("TOPLEFT",     cf, "TOPLEFT",     10, -28)
-    textBG:SetPoint("BOTTOMRIGHT", cf, "BOTTOMRIGHT", -10, 4)
+        local eb = UI.CreateScrollableEditBox(textBG, function() dialog.frame:Hide() end)
+        eb:SetAutoFocus(true)
+        dialog.frame._editBox = eb
+    end)
 
-    eb = UI.CreateScrollableEditBox(textBG, function() result.frame:Hide() end)
-    eb:SetAutoFocus(true)
-
+    result.titleBar._titleText:SetText("Export Profile: |cFFFFD100" .. profileName .. "|r")
+    local eb = result.frame._editBox
     result.frame:Show()
     C_Timer.After(0, function()
         eb:SetText(serializedStr or "")
@@ -243,8 +240,7 @@ function UI:ShowSettingsProfileExportDialog(profileName, serializedStr)
 end
 
 function UI:ShowSettingsProfileImportDialog(onImported)
-    local eb
-    local result = OneWoW_GUI:CreateDialog({
+    local result = OneWoW_GUI:GetOrCreateDialog({
         name   = "OneWoW_SettingsProfileImportDialog",
         title  = "Import UI & Addon Settings Profile",
         width  = 620,
@@ -253,35 +249,37 @@ function UI:ShowSettingsProfileImportDialog(onImported)
         showBrand = true,
         buttons = {
             { text = "Import", onClick = function(d)
-                local text = eb:GetText()
-                local ok, res = ns.Profiles.ImportProfile(text)
+                local ok, res = ns.Profiles.ImportProfile(d._editBox:GetText())
                 if ok then
                     print(string.format("|cFFFFD100OneWoW:|r Settings profile imported: %s", res))
                     d:Hide()
-                    if onImported then onImported() end
+                    if d._onImported then d._onImported() end
                 else
                     print(string.format("|cFFFFD100OneWoW:|r Import failed: %s", res or "unknown error"))
                 end
             end },
             { text = "Cancel", onClick = function(d) d:Hide() end },
         },
-    })
+    }, function(dialog)
+        local cf = dialog.contentFrame
 
-    local cf = result.contentFrame
+        local hint = OneWoW_GUI:CreateFS(cf, 10)
+        hint:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -8)
+        hint:SetText("Paste exported profile data below, then click Import:")
+        hint:SetTextColor(OneWoW_GUI:GetThemeColor("TEXT_SECONDARY"))
 
-    local hint = OneWoW_GUI:CreateFS(cf, 10)
-    hint:SetPoint("TOPLEFT", cf, "TOPLEFT", 10, -8)
-    hint:SetText("Paste exported profile data below, then click Import:")
-    hint:SetTextColor(OneWoW_GUI:GetThemeColor("TEXT_SECONDARY"))
+        local textBG = OneWoW_GUI:CreateFrame(cf, { width = 600, height = 380, backdrop = Constants.BACKDROP_SOFT })
+        textBG:ClearAllPoints()
+        textBG:SetPoint("TOPLEFT",     cf, "TOPLEFT",     10, -28)
+        textBG:SetPoint("BOTTOMRIGHT", cf, "BOTTOMRIGHT", -10, 4)
 
-    local textBG = OneWoW_GUI:CreateFrame(cf, { width = 600, height = 380, backdrop = Constants.BACKDROP_SOFT })
-    textBG:ClearAllPoints()
-    textBG:SetPoint("TOPLEFT",     cf, "TOPLEFT",     10, -28)
-    textBG:SetPoint("BOTTOMRIGHT", cf, "BOTTOMRIGHT", -10, 4)
+        local eb = UI.CreateScrollableEditBox(textBG, function() dialog.frame:Hide() end)
+        eb:SetAutoFocus(true)
+        dialog.frame._editBox = eb
+    end)
 
-    eb = UI.CreateScrollableEditBox(textBG, function() result.frame:Hide() end)
-    eb:SetAutoFocus(true)
-
+    result.frame._onImported = onImported
+    result.frame._editBox:SetText("")
     result.frame:Show()
 end
 
@@ -388,14 +386,14 @@ function UI:CreateProfilesTab(parent)
 
         local sorted = {}
         if profiles[RESERVED_DEFAULT] then
-            table.insert(sorted, { name = RESERVED_DEFAULT, data = profiles[RESERVED_DEFAULT] })
+            tinsert(sorted, { name = RESERVED_DEFAULT, data = profiles[RESERVED_DEFAULT] })
         end
         for name, data in pairs(profiles) do
             if name ~= RESERVED_DEFAULT and type(data) == "table" then
-                table.insert(sorted, { name = name, data = data })
+                tinsert(sorted, { name = name, data = data })
             end
         end
-        table.sort(sorted, function(a, b)
+        sort(sorted, function(a, b)
             if a.name == RESERVED_DEFAULT then return true end
             if b.name == RESERVED_DEFAULT then return false end
             return a.name:lower() < b.name:lower()
@@ -461,19 +459,19 @@ function UI:CreateProfilesTab(parent)
             local tags = {}
             if data.core then
                 local parts = {}
-                if data.core.theme    then table.insert(parts, data.core.theme)    end
-                if data.core.language then table.insert(parts, data.core.language) end
-                table.insert(tags, "Core" .. (#parts > 0 and (" (" .. table.concat(parts, ", ") .. ")") or ""))
+                if data.core.theme    then tinsert(parts, data.core.theme)    end
+                if data.core.language then tinsert(parts, data.core.language) end
+                tinsert(tags, "Core" .. (#parts > 0 and (" (" .. table.concat(parts, ", ") .. ")") or ""))
             end
             if data.qol then
                 local mc = 0
                 if data.qol.modules then for _ in pairs(data.qol.modules) do mc = mc + 1 end end
-                table.insert(tags, string.format("QoL (%d modules)", mc))
+                tinsert(tags, string.format("QoL (%d modules)", mc))
             end
             if data.cvars then
                 local cc = 0
                 for _ in pairs(data.cvars) do cc = cc + 1 end
-                if cc > 0 then table.insert(tags, string.format("%d CVars", cc)) end
+                if cc > 0 then tinsert(tags, string.format("%d CVars", cc)) end
             end
 
             local tagsText = OneWoW_GUI:CreateFS(card, 10)
